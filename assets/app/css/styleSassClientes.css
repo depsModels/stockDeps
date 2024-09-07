@@ -1,0 +1,291 @@
+@import url("https://fonts.googleapis.com/css?family=Montserrat:400,700");
+body {
+  background-color: #f2f2f2;
+}
+
+#titulo-clientes {
+  text-decoration: none;
+}
+
+ol {
+  list-style: none;
+  counter-reset: list;
+  padding: 0 0rem;
+}
+
+h3 {
+  margin: 0 auto;
+  display: flex;
+  color: #0d0d0d;
+  text-align: center;
+  width: fit-content;
+}
+
+.info-cliente {
+  margin: 15px;
+}
+
+.info-cliente-bloco {
+  margin: 30px;
+  text-align: start;
+}
+
+#carousel {
+  display: none;
+  width: 90%;
+  align-items: center;
+  margin: 20px auto;
+}
+
+.titulo {
+  background-color: #f2f2f2;
+  padding: 20px;
+}
+
+.card {
+  margin-top: 5px;
+  margin-bottom: 50px;
+  padding: 20px;
+  background-color: #e6e6ff;
+}
+
+.card:hover {
+  background-color: #ccccff;
+}
+
+.card-bloco {
+  cursor: pointer;
+  padding: 20px;
+  margin: 10px auto;
+  background-color: #e6e6ff;
+  border-radius: 20px;
+}
+
+.card-bloco:hover {
+  background-color: #ccccff;
+}
+
+.radios {
+  margin-left: 70px;
+}
+
+input[type=radio] {
+  display: none;
+}
+
+input[type=radio]:checked + label {
+  height: 50px;
+  background-color: #d0d0e1;
+  border-radius: 10px;
+}
+
+.botao-produtos {
+  display: block;
+  padding: 15px;
+  font-size: 18px;
+  border: 0px;
+  border-radius: 10px;
+  width: 100%;
+  height: 50px;
+  text-align: left;
+  padding-top: 10px;
+  cursor: pointer;
+}
+
+.botao-produtos:hover {
+  background-color: #d1d1e0;
+}
+
+.item-cartao {
+  height: 50px;
+}
+
+.center {
+  margin: 0 auto;
+  display: flex;
+  text-align: center;
+  width: fit-content;
+}
+
+.dark-mode {
+  background-color: #1c1c1c;
+}
+.dark-mode .container1 {
+  background-color: #1c1c1c;
+  color: #f2f2f2;
+}
+.dark-mode #titulo-clientes {
+  text-decoration: none;
+  color: #f2f2f2;
+}
+.dark-mode ol {
+  color: #f2f2f2;
+}
+.dark-mode h3 {
+  color: #f2f2f2;
+}
+.dark-mode .info-cliente {
+  color: #f2f2f2;
+}
+.dark-mode .info-cliente-bloco {
+  color: #f2f2f2;
+}
+.dark-mode #carousel {
+  display: none;
+  width: 90%;
+  align-items: center;
+  margin: 20px auto;
+}
+.dark-mode .titulo {
+  background-color: #1c1c1c;
+  color: #f2f2f2;
+}
+.dark-mode .card {
+  background-color: #3a3a3a;
+}
+.dark-mode .card:hover {
+  background-color: #4d4d4d;
+}
+.dark-mode .card-bloco {
+  background-color: #3a3a3a;
+}
+.dark-mode .card-bloco:hover {
+  border: 1px solid #ed5249;
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+.dark-mode .radios {
+  color: #f2f2f2;
+}
+.dark-mode input[type=radio]:checked + label {
+  background-color: #2e2e2e;
+}
+.dark-mode .botao-produtos {
+  background-color: #2e2e2e;
+  color: #f2f2f2;
+}
+.dark-mode .botao-produtos:hover {
+  background-color: #4d4d4d;
+}
+.dark-mode .camada {
+  background-color: #3a3a3a;
+}
+.dark-mode .item-cartao {
+  background-color: #3a3a3a;
+}
+.dark-mode .center {
+  color: #f2f2f2;
+}
+.dark-mode .embaixo {
+  color: #f2f2f2;
+}
+.dark-mode .block {
+  color: #f2f2f2;
+}
+.dark-mode .flex {
+  color: #f2f2f2;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: 15% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+  max-width: 600px;
+  color: #000;
+}
+
+.fecharModal {
+  color: #aaa;
+  font-size: 28px;
+  font-weight: bold;
+  display: flex;
+    width: 100%;
+    justify-content: end;
+}
+
+.fecharModal:hover,
+.fecharModal:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.tabs {
+  margin-bottom: 10px;
+}
+
+.tablinks {
+  background-color: #f2f2f2;
+  border: 1px solid #ccc;
+  color: #333;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.tablinks:hover {
+  background-color: #ddd;
+}
+
+.tablinks.active {
+  background-color: #ccc;
+}
+
+.tabcontent {
+  display: none;
+}
+
+.tabcontent.active {
+  display: block;
+}
+
+#nomeCliente{
+  color: #000;
+  text-transform: capitalize;
+  margin-bottom: 30px;
+}
+
+body.modal-open {
+  overflow: hidden;
+  height: 100svh; 
+}
+
+#tableHistorico {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+#tableHistorico th,#tableHistorico td {
+  border: 1px solid black;
+  padding: 8px;
+  text-align: left;
+  font-weight: bold;
+
+}
+
+#tableHistorico th {
+  background-color: black;
+  color: white;
+}
+
+#tableHistorico tr:nth-child(even) {
+  background-color: white;
+}
+
+#tableHistorico tr:nth-child(odd) {
+  background-color: #f2f2f2;
+}
+
+/*# sourceMappingURL=styleSassClientes.css.map */

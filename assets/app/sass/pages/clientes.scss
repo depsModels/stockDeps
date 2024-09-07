@@ -1,0 +1,233 @@
+@import url("https://fonts.googleapis.com/css?family=Montserrat:400,700");
+@import "../colors/colors.scss";
+
+
+body{
+    background-color: $background-light;
+  }
+
+#titulo-clientes{
+    text-decoration: none;
+}  
+
+ol {
+    list-style: none;
+    counter-reset: list;
+    padding: 0 0rem;
+}
+
+h3 {
+    margin: 0 auto;
+    display: flex;
+    color: #0d0d0d;
+    text-align: center;
+    width: fit-content;
+}
+.info-cliente {
+    margin: 15px;
+}
+
+.info-cliente-bloco {
+    margin: 60px;
+    text-align: start;
+}
+
+#carousel {
+   
+    display: none;
+    width: 90%;
+    align-items: center;
+    margin: 20px auto;
+}
+
+.titulo {
+    background-color: $background-light;
+    padding: 20px;
+}
+
+.card {
+    margin-top: 5px;
+    margin-bottom: 50px;
+    padding: 20px;
+    height: 600px;
+    background-color: #e6e6ff;
+}
+.card:hover {
+    background-color: #ccccff;
+  }
+  
+.card-bloco{
+    cursor: pointer;
+    padding: 20px;
+    width: 1000px;
+    margin:10px auto;
+    background-color: #e6e6ff;
+    border-radius: 20px;
+}
+.card-bloco:hover{
+    background-color: #ccccff;
+}
+
+
+.radios {
+    margin-left: 70px;
+}
+
+input[type="radio"] {
+    display: none;
+}
+
+input[type=radio]:checked+label {
+    height: 50px;
+    background-color: #d0d0e1;
+    border-radius: 10px;
+}
+
+.botao-produtos {
+    display: block;
+    padding: 15px;
+    font-size: 18px;
+    border: 0px;
+    border-radius: 10px;
+    width: 100%;
+    height: 50px;
+    text-align: left;
+    padding-top: 10px;
+    cursor: pointer;
+}
+
+.botao-produtos:hover {
+    background-color: #d1d1e0;
+}
+
+.flex{
+    display: flex;
+}
+.block{
+    display: block;
+}
+
+.camada{
+    width: 350px;
+}
+
+.item-cartao{
+    height: 50px;
+}
+
+.center{
+    margin: 0 auto;
+    display: flex;
+    text-align: center;
+    width: fit-content;
+}
+
+.embaixo{
+    align-self: center;
+    position: absolute;
+    bottom: 20px;
+}
+
+.dark-mode {
+    // Cores escuras
+   background-color: $background-dark;
+  
+    .container1 {
+        background-color: $background-dark;
+        color: $cor-texto-dark;
+      }
+  
+    #titulo-clientes {
+      text-decoration: none;
+      color: $cor-texto-dark;
+    }
+  
+    ol {
+      color: $cor-texto-dark;
+    }
+
+    h3 {
+      color: $cor-texto-dark;
+    }
+  
+    .info-cliente {
+      color: $cor-texto-dark;
+    }
+  
+    .info-cliente-bloco {
+      color: $cor-texto-dark;
+    }
+  
+    #carousel {
+      display: none;
+      width: 90%;
+      align-items: center;
+      margin: 20px auto;
+    }
+  
+    .titulo {
+      background-color: $background-dark;
+      color: $cor-texto-dark;
+    }
+  
+    .card {
+      background-color: $bg-cartoes-dark;
+    }
+  
+    .card:hover {
+      background-color: $hover-botoes-dark;
+    }
+  
+    .card-bloco {
+   
+      background-color: $bg-cartoes-dark;
+    }
+  
+    .card-bloco:hover {
+        border:1px solid  #ed5249;
+         transform: translateY(-5px);
+          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+  
+    .radios {
+      color: $cor-texto-dark;
+    }
+  
+    input[type="radio"]:checked + label {
+      background-color: $botao-barraLateral-dark;
+    }
+  
+    .botao-produtos {
+      background-color: $botao-barraLateral-dark;
+      color: $cor-texto-dark;
+    }
+  
+    .botao-produtos:hover {
+      background-color: $hover-botoes-dark;
+    }
+  
+    .camada {
+      background-color: $bg-cartoes-dark;
+    }
+
+    .item-cartao {
+      background-color: $bg-cartoes-dark;
+    }
+  
+    .center {
+      color: $cor-texto-dark;
+    }
+  
+    .embaixo {
+      color: $cor-texto-dark;
+    }
+  
+    .block {
+      color: $cor-texto-dark;
+    }
+  
+    .flex {
+      color: $cor-texto-dark;
+    }
+  }
+  

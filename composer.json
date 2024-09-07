@@ -1,0 +1,31 @@
+{
+  "name": "elano-tavares/valen",
+  "description": "Valen - Gerenciador de Arquivos",
+  "minimum-stability": "stable",
+  "authors": [
+    {
+      "name": "Elano Tavares",
+      "email": "elano.tavares.ncs@gmail.com",
+      "homepage": "https://www.ifsul.edu.br",
+      "role": "Developer"
+    }
+  ],
+  "config": {
+    "vendor-dir": "vendor"
+  },
+  "autoload": {
+    "psr-4": {
+      "Source\\": "source/"
+    },
+    "files": [
+      "source/Boot/Config.php",
+      "source/Boot/Helpers.php"
+    ]
+  },
+  "require": {
+    "dompdf/dompdf": "^2.0",
+    "coffeecode/router": "1.0.8",
+    "coffeecode/uploader": "1.0.11",
+    "league/plates": "v3.4.0"
+  }
+}

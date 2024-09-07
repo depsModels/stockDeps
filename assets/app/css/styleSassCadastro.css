@@ -1,0 +1,226 @@
+@import url("https://fonts.googleapis.com/css?family=Muli&display=swap");
+@import url("https://fonts.googleapis.com/css?family=Open+Sans:400,500&display=swap");
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: #4b6cb7;
+  /* fallback for old browsers */
+  background: -webkit-linear-gradient(to right, #182848, #4b6cb7);
+  /* Chrome 10-25, Safari 5.1-6 */
+  background: linear-gradient(to right, #182848, #4b6cb7);
+  /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+  font-family: "Open Sans", sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  margin: 0;
+}
+
+.container{
+  background-color: #f7f7f7;
+}
+
+
+.header h2 {
+  margin: 0;
+}
+
+.container .title {
+  font-size: 25px;
+  font-weight: 500;
+  position: relative;
+}
+
+.container .title::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 30px;
+  border-radius: 5px;
+  background: linear-gradient(135deg, #71b7e6, #9b59b6);
+}
+
+.form {
+  padding: 30px 40px;
+}
+
+.form-control {
+  margin-bottom: 10px;
+  padding-bottom: 20px;
+}
+
+.form-control label {
+  margin-bottom: 5px;
+}
+
+.form-control input {
+  border: 2px solid #f0f0f0;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 14px;
+  padding: 10px;
+
+}
+
+.form-control select {
+  margin-top: 5px;
+  border: 2px solid #f0f0f0;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 14px;
+  padding: 10px;
+
+}
+
+.form button {
+  background-color: #8e44ad;
+  border: 2px solid #8e44ad;
+  border-radius: 4px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 16px;
+  padding: 10px;
+  margin-top: 20px;
+  width: 100%;
+}
+
+.custom-flex-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly; /* Isso distribuirá o espaço disponível entre as colunas */
+  align-items: flex-start; /* Alinhar os itens ao topo */
+}
+
+.botao-voltar {
+  cursor: pointer;
+  float: right;
+  width: 100px;
+  background-color: #dab3ff;
+  border-radius: 5px;
+  border: 0px;
+  height: 40px;
+  margin-left: 70px;
+}
+
+.botao-voltar:hover {
+  background-color: #ce99ff;
+}
+
+form .button input {
+  
+  margin-top: 25px;
+  height: 45px;
+  width: 100%;
+  border-radius: 5px;
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #71b7e6, #9b59b6);
+}
+
+.dark-mode .title {
+  color: #f2f2f2;
+}
+.dark-mode label {
+  color: #f2f2f2;
+}
+.dark-mode .details {
+  color: #f2f2f2;
+}
+.dark-mode .header {
+  background-color: #1c1c1c;
+}
+.dark-mode .container {
+  background-color: #1c1c1c;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+.dark-mode input {
+  background-color: #3a3a3a;
+  color: #f2f2f2;
+}
+.dark-mode select {
+  background-color: #3a3a3a;
+  color: #f2f2f2;
+}
+
+.tema {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-left: 100px;
+}
+.tema label {
+  width: 160px;
+  height: 40px;
+  position: relative;
+  display: block;
+  background: #ebebeb;
+  border-radius: 200px;
+  box-shadow: inset 0px 5px 15px rgba(0, 0, 0, 0.4), inset 0px -5px 15px rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: 0.3s;
+}
+.tema label:after {
+  content: "";
+  width: 36px;
+  height: 36px;
+  position: absolute;
+  top: 3px;
+  left: 8px;
+  background: linear-gradient(180deg, #ffcc89, #d8860b);
+  border-radius: 180px;
+  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.2);
+  transition: 0.3s;
+}
+.tema input {
+  width: 0;
+  height: 0;
+  visibility: hidden;
+}
+.tema input:checked + label {
+  background: #242424;
+}
+.tema input:checked + label:after {
+  left: 150px;
+  transform: translateX(-100%);
+  background: linear-gradient(180deg, #777, #3a3a3a);
+}
+.tema label:active:after {
+  width: 80px;
+}
+.tema input:checked + label + .background {
+  background: #242424;
+}
+.tema label svg {
+  position: absolute;
+  width: 30px;
+  top: 6px;
+  z-index: 100;
+}
+.tema label svg.sun {
+  left: 11px;
+  fill: #fff;
+  transition: 0.3s;
+}
+.tema label svg.moon {
+  left: 117px;
+  fill: #7e7e7e;
+  transition: 0.3s;
+}
+.tema input:checked + label svg.sun {
+  fill: #7e7e7e;
+}
+.tema input:checked + label svg.moon {
+  fill: #fff;
+}
+
+/*# sourceMappingURL=styleSassCadastro.css.map */
