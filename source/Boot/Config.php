@@ -4,19 +4,20 @@
 
 // DATABASE
 
-define("CONF_DB_HOST", "localhost");
-define("CONF_DB_USER", "root");
-define("CONF_DB_PASS", "");
-define("CONF_DB_NAME", "stock-deps"); // aqui deve ser alterado para o nome do banco de dados
+define("CONF_DB_HOST", "127.0.0.1");
+define("CONF_DB_USER", "u181504957_depsModels");
+define("CONF_DB_PASS", "M18,E25@deps");
+define("CONF_DB_NAME", "u181504957_stockDeps"); // aqui deve ser alterado para o nome do banco de dados
 
 
 // PROJECT URLs
 
-define("CONF_URL_BASE", "http://127.0.0.1/stock-deps"); // depois da / deve vir o nome da pasta do trabalho
-define("CONF_URL_TEST", "http://127.0.0.1/stock-deps"); // depois da / deve vir o nome da pasta do trabalho
+define("CONF_URL_BASE", "https://stockdeps.com"); // depois da / deve vir o nome da pasta do trabalho
+define("CONF_URL_TEST", "https://stockdeps.com"); // depois da / deve vir o nome da pasta do trabalho
 
 // VIEW
 
+define("CONF_VIEW_WEB", __DIR__ . "/../../themes/web");
 define("CONF_VIEW_APP", __DIR__ . "/../../themes/app");
 
 

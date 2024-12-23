@@ -7,24 +7,24 @@ use Source\Core\Connect;
 class Saidas
 {
     private $id;
-    private $idCategoria;
     private $idClientes;
     private $idProdutos;
     private $quantidade;
+    private $preco;
 
     public function __construct(
-        int $id = NULL,
-        int $idCategoria = NULL,
-        string $idClientes = NULL,
-        string $idProdutos = NULL,
-        string $quantidade = NULL
+        ?int $id = NULL,
+        ?int $idClientes = NULL,
+        ?int $idProdutos = NULL,
+        ?float $quantidade = NULL,
+        ?float $preco = NULL
     )
     {
         $this->id = $id;
-        $this->idCategoria = $idCategoria;
         $this->idClientes = $idClientes;
         $this->idProdutos = $idProdutos;
         $this->quantidade = $quantidade;
+        $this->preco = $preco;
     }
 
     /**
@@ -46,23 +46,7 @@ class Saidas
     /**
      * @return string|null
      */
-    public function getIdCategoria(): ?int
-    {
-        return $this->idCategoria;
-    }
-
-    /**
-     * @param string|null $name
-     */
-    public function setIdCategoria(?int $idCategoria): void
-    {
-        $this->idCategoria = $idCategoria;
-    }
-
-    /**
-     * @return string|null
-     */
-    public function getIdClientes(): ?string
+    public function getIdClientes(): ?int
     {
         return $this->idClientes;
     }
@@ -70,7 +54,7 @@ class Saidas
     /**
      * @param string|null $name
      */
-    public function setIdClientes(?string $idClientes): void
+    public function setIdClientes(?int $idClientes): void
     {
         $this->idClientes = $idClientes;
     }
@@ -78,7 +62,7 @@ class Saidas
     /**
      * @return string|null
      */
-    public function getIdProdutos(): ?string
+    public function getIdProdutos(): ?int
     {
         return $this->idProdutos;
     }
@@ -86,7 +70,7 @@ class Saidas
     /**
      * @param string|null $idProdutos
      */
-    public function setIdProdutos(?string $idProdutos): void
+    public function setIdProdutos(?int $idProdutos): void
     {
         $this->idProdutos = $idProdutos;
     }
@@ -94,7 +78,7 @@ class Saidas
     /**
      * @return string|null
      */
-    public function getQuantidade(): ?string
+    public function getQuantidade(): ?int
     {
         return $this->quantidade;
     }
@@ -102,9 +86,29 @@ class Saidas
     /**
      * @param string|null $quantidade
      */
-    public function setQuantidade(?string $quantidade): void
+    public function setQuantidade(?int $quantidade): void
     {
         $this->quantidade = $quantidade;
+    }
+
+    /**
+     * Get the value of preco
+     */ 
+    public function getPreco()
+    {
+        return $this->preco;
+    }
+
+    /**
+     * Set the value of preco
+     *
+     * @return  self
+     */ 
+    public function setPreco($preco)
+    {
+        $this->preco = $preco;
+
+        return $this;
     }
 
     public function selectAll ()
@@ -120,50 +124,84 @@ class Saidas
         }
     }
 
+    public function selectInfoSaidaById($id)
+    {
+        $query = "SELECT * FROM saidas WHERE id = :id";
+        
+        $stmt = Connect::getInstance()->prepare($query);
+        $stmt->bindParam(':id', $id);
+
+        $stmt->execute();
+        
+        // Verifica se há resultados
+        if ($stmt->rowCount() == 0) {
+            return false; // Nenhum registro encontrado
+        } else {
+            // Retorna os valores da saida
+            return $stmt->fetch();
+        }
+    }
+
     public function insert()
     {
-        $output = array();
 
-        $queryVefifyQtd = "SELECT (COALESCE(totalE,0) - COALESCE(totalS,0)) AS sobra
-        FROM( SELECT SUM(e.quantidade) AS totalE  FROM entradas e WHERE e.idProdutos = :idProdutos ) AS subconsultaE,
-        ( SELECT SUM(s.quantidade) AS totalS FROM saidas s WHERE s.idProdutos = :idProdutos
-        ) AS subconsultaS;
-        ";
-        $stmt = Connect::getInstance()->prepare($queryVefifyQtd);
-        $stmt->bindParam(":idProdutos", $this->idProdutos);
-        $stmt->execute();
-        $result = $stmt->fetch();        
-
-        if($this->quantidade > $result->sobra){
-            $output['error'] = "Quantidade insuficiente para retirada";
-            return false  ;
-        }
-
-        $query = "INSERT INTO saidas (idCategoria, idClientes, idProdutos, quantidade) VALUES (:idCategoria, :idClientes, :idProdutos, :quantidade)";
+        $query = "INSERT INTO saidas (idClientes, idProdutos, quantidade, preco) 
+                    VALUES (:idClientes, :idProdutos, :quantidade, :preco)";
         $stmt = Connect::getInstance()->prepare($query);
-        $stmt->bindParam(":idCategoria", $this->idCategoria);
-        $stmt->bindParam(":idClientes", $this->idClientes);
-        $stmt->bindParam(":idProdutos", $this->idProdutos);
-        $stmt->bindValue(":quantidade", $this->quantidade);
-        $stmt->execute();
 
-        $output['success'] = "Saída inserida com sucesso";
+        // Verifica se idClientes é null para não passar um valor inválido
+        if ($this->idClientes == null) {
+            $stmt->bindValue(":idClientes", null); // Passa explicitamente NULL
+        } else {
+            $stmt->bindValue(":idClientes", $this->idClientes); // Passa como inteiro
+        }
+        $stmt->bindParam(":idProdutos", $this->idProdutos);
+        $stmt->bindParam(":quantidade", $this->quantidade);
+        $stmt->bindParam(":preco", $this->preco);
+        $stmt->execute();
         return true;
     }
     
-    /*
-
-    public function getArray() : array
+    public function delete($id)
     {
-        return ["user" => [
-            "id" => $this->getId(),
-            "name" => $this->getName(),
-            "email" => $this->getEmail(),
-            "document" => $this->getDocument(),
-            "photo" => $this->getPhoto()
-        ]];
+        $query = "DELETE FROM saidas WHERE id = :id";
+
+        $stmt = Connect::getInstance()->prepare($query);
+        $stmt->bindParam(":id", $id);
+
+        $stmt->execute();
+
+        if ($stmt->rowCount() == 0) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
-    */
+    public function update($id, $quantidade, $preco)
+    {
+        // Query de atualização
+        $query = "UPDATE saidas 
+                SET quantidade = :quantidade, preco = :preco 
+                WHERE id = :id";
+
+        // Prepara a conexão
+        $stmt = Connect::getInstance()->prepare($query);
+
+        // Liga os parâmetros aos valores
+        $stmt->bindParam(":id", $id);
+        $stmt->bindParam(":quantidade", $quantidade);
+        $stmt->bindParam(":preco", $preco);
+
+        // Executa a query
+        $stmt->execute();
+
+        // Retorna se houve alterações
+        if ($stmt->rowCount() > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 
 }

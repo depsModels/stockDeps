@@ -7,21 +7,24 @@ use Source\Core\Connect;
 class Entradas
 {
     private $id;
-    private $idCategoria;
+    private $idFornecedor;
     private $idProdutos;
     private $quantidade;
+    private $preco;
 
     public function __construct(
         int $id = NULL,
-        int $idCategoria = NULL,
+        int $idFornecedor = NULL,
         int $idProdutos = NULL,
-        int $quantidade = NULL
+        float $quantidade = NULL,
+        float $preco = NULL
     )
     {
         $this->id = $id;
-        $this->idCategoria = $idCategoria;
+        $this->idFornecedor = $idFornecedor;
         $this->idProdutos = $idProdutos;
         $this->quantidade = $quantidade;
+        $this->preco = $preco;
     }
 
     /**
@@ -43,18 +46,7 @@ class Entradas
     /**
      * @return string|null
      */
-    public function getIdCategoria()
-    {
-        return $this->idCategoria;
-    }
 
-    /**
-     * @param string|null $name
-     */
-    public function setIdCategoria($idCategoria): void
-    {
-        $this->idCategoria = $idCategoria;
-    }
 
     /**
      * @return string|null
@@ -87,8 +79,28 @@ class Entradas
     {
         $this->quantidade = $quantidade;
     }
+    
+    /**
+     * Get the value of preco
+     */ 
+    public function getPreco()
+    {
+        return $this->preco;
+    }
 
-    public function selectAll ()
+    /**
+     * Set the value of preco
+     *
+     * @return  self
+     */ 
+    public function setPreco($preco)
+    {
+        $this->preco = $preco;
+
+        return $this;
+    }
+
+    public function selectAll (): array|bool
     {
         $query = "SELECT * FROM entradas";
         $stmt = Connect::getInstance()->prepare($query);
@@ -101,30 +113,77 @@ class Entradas
         }
     }
 
+    public function selectInfoEntradaById($id)
+    {
+        $query = "SELECT * FROM entradas WHERE id = :id";
+        
+        $stmt = Connect::getInstance()->prepare($query);
+        $stmt->bindParam(':id', $id);
+
+        $stmt->execute();
+        
+        // Verifica se há resultados
+        if ($stmt->rowCount() == 0) {
+            return false; // Nenhum registro encontrado
+        } else {
+            // Retorna os valores da entrada
+            return $stmt->fetch();
+        }
+    }
+
     public function insert() : bool
     {
-        $query = "INSERT INTO entradas (idCategoria, idProdutos, quantidade) VALUES (:idCategoria, :idProdutos, :quantidade)";
+        $query = "INSERT INTO entradas (idFornecedor, idProdutos, quantidade, preco) 
+                    VALUES (:idFornecedor, :idProdutos, :quantidade, :preco)";
         $stmt = Connect::getInstance()->prepare($query);
-        $stmt->bindParam(":idCategoria", $this->idCategoria);
+        $stmt->bindParam(":idFornecedor", $this->idFornecedor);
         $stmt->bindParam(":idProdutos", $this->idProdutos);
-        $stmt->bindValue(":quantidade", $this->quantidade);
+        $stmt->bindParam(":quantidade", $this->quantidade);
+        $stmt->bindParam(":preco", $this->preco);
         $stmt->execute();
         return true;
     }
-    
-    /*
 
-    public function getArray() : array
+    public function delete($id)
     {
-        return ["user" => [
-            "id" => $this->getId(),
-            "name" => $this->getName(),
-            "email" => $this->getEmail(),
-            "document" => $this->getDocument(),
-            "photo" => $this->getPhoto()
-        ]];
+        $query = "DELETE FROM entradas WHERE id = :id";
+
+        $stmt = Connect::getInstance()->prepare($query);
+        $stmt->bindParam(":id", $id);
+
+        $stmt->execute();
+
+        if ($stmt->rowCount() == 0) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
-    */
+    public function update($id, $quantidade, $preco)
+    {
+        // Query de atualização
+        $query = "UPDATE entradas 
+                SET quantidade = :quantidade, preco = :preco 
+                WHERE id = :id";
+
+        // Prepara a conexão
+        $stmt = Connect::getInstance()->prepare($query);
+
+        // Liga os parâmetros aos valores
+        $stmt->bindParam(":id", $id);
+        $stmt->bindParam(":quantidade", $quantidade);
+        $stmt->bindParam(":preco", $preco);
+
+        // Executa a query
+        $stmt->execute();
+
+        // Retorna se houve alterações
+        if ($stmt->rowCount() > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 
 }

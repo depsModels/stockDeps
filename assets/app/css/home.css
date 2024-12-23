@@ -1,0 +1,61 @@
+/* Estilo do Card */
+.produtos-mais-vendidos-card {
+    border-radius: 12px;
+    border: none;
+    background-color: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.produtos-mais-vendidos-container {
+    max-height: none; /* Remover o limite de altura e o scroll */
+    padding-right: 5px; /* Para evitar que o conteúdo fique cortado */
+}
+
+.card-title {
+    font-weight: bold;
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.list-group-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: none;
+    padding: 10px 12px;
+    background-color: #f9f9f9;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    font-size: 0.9rem; /* Diminuir o tamanho da fonte */
+}
+
+.list-group-item:nth-child(odd) {
+    background-color: #f4f4f4;
+}
+
+.list-group-item:hover {
+    background-color: #e9ecef;
+}
+
+.list-group-item span.produto-nome {
+    max-width: 70%; /* Limitar a largura do nome do produto */
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis; /* Exibir '...' se o nome do produto for muito longo */
+}
+
+.list-group-item span.produto-nome:hover {
+    white-space: normal; /* Exibir o texto completo ao passar o mouse */
+    overflow: visible;
+}
+
+.badge {
+    font-size: 0.8rem; /* Reduzir o tamanho da badge */
+    padding: 5px 10px;
+    border-radius: 12px;
+    background-color: #28a745;
+    color: white;
+    white-space: nowrap; /* Garantir que o badge fique em uma única linha */
+}

@@ -5,79 +5,48 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
-
-  <link rel="stylesheet" href="<?= url('assets/app/css/styleSassGeral.css') ?>">
-
+  <link rel="stylesheet" href="<?= url('assets/app/css/globals.css') ?>">
   <!-- CSS only -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
-
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- FONT AWESOME PAGE CATEGORIES -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
   <title>Stock Deps</title>
 </head>
 
 <body>
-
-
-  <!--TOPO DA PÁGINA-->
-  <nav class="navbar navbar-expand-lg ">
+  <nav class="navbar navbar-expand-lg  shadow-sm">
     <div class="container">
-      <a class="navbar-brand" href="#">
-        <p class="deps mt-3">Stock deps</p>
+      <a class="navbar-brand d-flex align-items-center" href="<?= url('app') ?>">
+        <span class="fw-bold brand">Stock Deps</span>
       </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-        &#9776;
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
       </button>
-      <div class="collapse navbar-collapse justify-content-center" id="navbarSupportedContent">
-
-        <button class="close-button" type="button">&#10006;</button>
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <li class="nav-item">
-            <a class="nav-link" href="<?= url('') ?>">Início</a>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+          <li class="nav-item mx-1">
+            <a class="nav-link" aria-current="page" href="<?= url('app') ?>"><i class="bi bi-house-door-fill"></i> Início</a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" href="<?= url('estoque') ?>">Estoque</a>
+          <li class="nav-item mx-1">
+            <a class="nav-link" href="<?= url('app/estoque') ?>"><i class="bi bi-box-seam"></i> Estoque</a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" href="<?= url('cadastro') ?>">Cadastro</a>
+          <li class="nav-item mx-1">
+            <a class="nav-link" href="<?= url('app/clientes') ?>"><i class="bi bi-person-plus-fill"></i> Clientes</a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" href="<?= url('relatorio') ?>">Relatórios</a>
+          <li class="nav-item mx-1">
+            <a class="nav-link" href="<?= url('app/fornecedores') ?>"><i class="bi bi-truck"></i> Fornecedores</a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" href="<?= url('clientes') ?>">Clientes</a>
-          </li>
-          <li class="nav-item">
-            <div class="form-check form-switch tema">
-              <input class="form-check-input" type="checkbox" id="darkmode-toggle">
-              <label class="form-check-label" for="darkmode-toggle"></label>
-            </div>
+          <li class="nav-item mx-1">
+            <a class="nav-link" href="<?= url('app/relatorio') ?>"><i class="bi bi-bar-chart-line-fill"></i> Relatórios</a>
           </li>
         </ul>
-     
-        <form class="d-flex" role="search">
-          <div class="inputPesquisa">
-            <div class="block">
-              <input id="procurar-cliente" class="form-control mt-1 mx-3" type="search" placeholder="Procurar cliente" aria-label="Search">
-            </div>
-          </div>
-        </form>
       </div>
     </div>
   </nav>
-
-
-  <div id="client-list">
-
-  </div>
-
-
-  <script src="<?= url('assets/app/js/tema.js') ?>"></script>
-
-  <script src="<?= url('assets/app/js/hamburguer.js') ?>"></script>
 </body>
-
 </html>
 <?php
-
 echo $this->section("content");
-
 ?>

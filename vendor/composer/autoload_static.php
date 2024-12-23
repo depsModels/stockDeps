@@ -4,16 +4,18 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInitff1e480d9b5d5c16058de52380f494cc
+class ComposerStaticInit32a0e77f67f6f7afe5880df372327424
 {
     public static $files = array (
-        '5c8ba73c132fa373476800334dc1ad72' => __DIR__ . '/../..' . '/source/Boot/Config.php',
-        '4caef4ed56a696cfdf246748537ce603' => __DIR__ . '/../..' . '/source/Boot/Helpers.php',
+        '0e6d7bf4a5811bfa5cf40c5ccd6fae6a' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/bootstrap.php',
+        'd680e9fbbb2e97f28f61497ca3440343' => __DIR__ . '/../..' . '/source/Boot/Config.php',
+        '8b8267b2ecd180b4a23a51ccb0e8a7f8' => __DIR__ . '/../..' . '/source/Boot/Helpers.php',
     );
 
     public static $prefixLengthsPsr4 = array (
         'S' => 
         array (
+            'Symfony\\Polyfill\\Mbstring\\' => 26,
             'Svg\\' => 4,
             'Source\\' => 7,
             'Sabberworm\\CSS\\' => 15,
@@ -42,6 +44,10 @@ class ComposerStaticInitff1e480d9b5d5c16058de52380f494cc
     );
 
     public static $prefixDirsPsr4 = array (
+        'Symfony\\Polyfill\\Mbstring\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-mbstring',
+        ),
         'Svg\\' => 
         array (
             0 => __DIR__ . '/..' . '/phenx/php-svg-lib/src/Svg',
@@ -80,6 +86,16 @@ class ComposerStaticInitff1e480d9b5d5c16058de52380f494cc
         ),
     );
 
+    public static $prefixesPsr0 = array (
+        'S' => 
+        array (
+            'Smalot\\PdfParser\\' => 
+            array (
+                0 => __DIR__ . '/..' . '/smalot/pdfparser/src',
+            ),
+        ),
+    );
+
     public static $classMap = array (
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
         'Dompdf\\Cpdf' => __DIR__ . '/..' . '/dompdf/dompdf/lib/Cpdf.php',
@@ -88,9 +104,10 @@ class ComposerStaticInitff1e480d9b5d5c16058de52380f494cc
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitff1e480d9b5d5c16058de52380f494cc::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitff1e480d9b5d5c16058de52380f494cc::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInitff1e480d9b5d5c16058de52380f494cc::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit32a0e77f67f6f7afe5880df372327424::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit32a0e77f67f6f7afe5880df372327424::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInit32a0e77f67f6f7afe5880df372327424::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInit32a0e77f67f6f7afe5880df372327424::$classMap;
 
         }, null, ClassLoader::class);
     }

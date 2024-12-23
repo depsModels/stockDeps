@@ -1,0 +1,51 @@
+.navbar {
+  height: 7rem;
+  font-family: "Roboto", sans-serif;
+}
+
+.brand {
+  font-size: 2rem;
+}
+
+.nav-item {
+  font-size: 1.5rem;
+}
+
+body {
+  background-color: #f4f7fc;
+}
+.card {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+.card h3 {
+  font-size: 1.5rem;
+  margin: 0;
+}
+.chart-container {
+  position: relative;
+  height: 300px;
+}
+.table {
+  background-color: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+.btn-quick-action {
+  background-color: #007bff;
+  color: #fff;
+  border-radius: 25px;
+}
+.btn-quick-action:hover {
+  background-color: #0056b3;
+}
+.dropdown-menu {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+a:hover{
+  cursor: pointer;
+}

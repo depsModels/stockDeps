@@ -9,22 +9,31 @@ class Produtos
     private $id;
     private $idCategoria;
     private $nome;
-    private $preco;
     private $descricao;
+    private $preco;
+    private $imagem;
+    private $unidade_medida;
+    private $codigo_produto;
 
     public function __construct(
         int $id = NULL,
         int $idCategoria = NULL,
         string $nome = NULL,
-        string $preco = NULL,
-        string $descricao = NULL
+        string $descricao = NULL,
+        float $preco = NULL,
+        string $imagem = NULL,
+        string $unidade_medida = NULL,
+        string $codigo_produto = NULL
     )
     {
         $this->id = $id;
         $this->idCategoria = $idCategoria;
         $this->nome = $nome;
-        $this->preco = $preco;
         $this->descricao = $descricao;
+        $this->preco = $preco;
+        $this->imagem = $imagem;
+        $this->unidade_medida = $unidade_medida;
+        $this->codigo_produto = $codigo_produto;
     }
 
     /**
@@ -78,7 +87,7 @@ class Produtos
     /**
      * @return string|null
      */
-    public function getPreco(): ?string
+    public function getPreco(): ?float
     {
         return $this->preco;
     }
@@ -86,7 +95,7 @@ class Produtos
     /**
      * @param string|null $preco
      */
-    public function setPreco(?string $preco): void
+    public function setPreco(?float $preco): void
     {
         $this->preco = $preco;
     }
@@ -107,6 +116,66 @@ class Produtos
         $this->descricao = $descricao;
     }
 
+    /**
+     * Get the value of imagem
+     */ 
+    public function getImagem()
+    {
+        return $this->imagem;
+    }
+
+    /**
+     * Set the value of imagem
+     *
+     * @return  self
+     */ 
+    public function setImagem($imagem)
+    {
+        $this->imagem = $imagem;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of unidade_medida
+     */ 
+    public function getUnidade_medida()
+    {
+        return $this->unidade_medida;
+    }
+
+    /**
+     * Set the value of unidade_medida
+     *
+     * @return  self
+     */ 
+    public function setUnidade_medida($unidade_medida)
+    {
+        $this->unidade_medida = $unidade_medida;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of codigo_produto
+     */ 
+    public function getCodigo_produto()
+    {
+        return $this->codigo_produto;
+    }
+
+    /**
+     * Set the value of codigo_produto
+     *
+     * @return  self
+     */ 
+    public function setCodigo_produto($codigo_produto)
+    {
+        $this->codigo_produto = $codigo_produto;
+
+        return $this;
+    }
+
     public function selectAll ()
     {
         $query = "SELECT * FROM produtos";
@@ -120,12 +189,13 @@ class Produtos
         }
     }
 
-    public function validateProdutos($nome, $idCategoria) : bool
+    public function validateProduto($nome, $idCategoria, $codigo_produto) : bool
     {
-        $query = "SELECT * FROM produtos WHERE nome = :nome AND idCategoria = :idCategoria";
+        $query = "SELECT * FROM produtos WHERE (nome = :nome AND idCategoria = :idCategoria) OR (codigo_produto = :codigo_produto)";
         $stmt = Connect::getInstance()->prepare($query);
         $stmt->bindParam(":nome", $nome);
         $stmt->bindParam(":idCategoria", $idCategoria);
+        $stmt->bindParam(":codigo_produto", $codigo_produto);
         $stmt->execute();
         if($stmt->rowCount() == 1){
             return true;
@@ -134,63 +204,100 @@ class Produtos
         }
     }
 
+    public function getQuantidadeById($id): mixed
+    {
+        $query = "SELECT * FROM produtos WHERE id = :id";
+        $stmt = Connect::getInstance()->prepare($query);
+        $stmt->bindParam(":id", $id);
+        $stmt->execute();
+        if($stmt->rowCount() == 1){
+            $produto = $stmt->fetch();
+            return $produto->quantidade;
+        } else {
+            return false;
+        }
+    }
+
     public function insert() : bool
     {
-        $query = "INSERT INTO produtos (idCategoria, nome, preco, descricao) VALUES (:idCategoria, :nome, :preco, :descricao)";
+        $query = "INSERT INTO produtos (idCategoria, nome, descricao, preco, unidade_medida, codigo_produto) 
+                    VALUES (:idCategoria, :nome, :descricao, :preco, :unidade_medida, :codigo_produto)";
         $stmt = Connect::getInstance()->prepare($query);
         $stmt->bindParam(":idCategoria", $this->idCategoria);
         $stmt->bindParam(":nome", $this->nome);
-        $stmt->bindParam(":preco", $this->preco);
         $stmt->bindValue(":descricao", $this->descricao);
+        $stmt->bindParam(":preco", $this->preco);
+        $stmt->bindParam(":unidade_medida", $this->unidade_medida);
+        $stmt->bindParam(":codigo_produto", $this->codigo_produto);
         $stmt->execute();
         return true;
     }
 
-    public function validate (string $email, string $password) : bool
+    public function somaQuantidadeProdutos(int $idProduto, float $quantidade) 
     {
-        $query = "SELECT * FROM users WHERE email LIKE :email";
+        $query = "UPDATE produtos SET quantidade = quantidade + :quantidade WHERE id = :idProduto";
+
         $stmt = Connect::getInstance()->prepare($query);
-        $stmt->bindParam(":email", $email);
+        $stmt->bindParam(":quantidade", $quantidade);
+        $stmt->bindParam(":idProduto", $idProduto);
+        $stmt->execute();
+        return true;
+    }
+
+    public function subtraiQuantidadeProdutos(int $idProduto, float $quantidade) 
+    {
+        $query = "UPDATE produtos SET quantidade = quantidade - :quantidade WHERE id = :idProduto";
+
+        $stmt = Connect::getInstance()->prepare($query);
+        $stmt->bindParam(":quantidade", $quantidade);
+        $stmt->bindParam(":idProduto", $idProduto);
+        $stmt->execute();
+        return true;
+    }
+
+    public function delete($id)
+    {
+        $query = "DELETE FROM produtos WHERE id = :id";
+
+        $stmt = Connect::getInstance()->prepare($query);
+        $stmt->bindParam(":id", $id);
+
         $stmt->execute();
 
-        if($stmt->rowCount() == 0){
-            $this->message = "Usuário e/ou Senha não cadastrados!";
+        if ($stmt->rowCount() == 0) {
             return false;
         } else {
-            $user = $stmt->fetch();
-            if(!password_verify($password, $user->password)){
-                $this->message = "Usuário e/ou Senha não cadastrados!";
-                return false;
-            }
+            return true;
         }
-
-        $this->id = $user->id;
-        $this->name = $user->name;
-        $this->email = $user->email;
-        $this->document = $user->document;
-        $this->message = "Usuário Autorizado, redirect to APP!";
-
-        $arrayUser = [
-            "id" => $this->id,
-            "name" => $this->name,
-            "email" => $this->email,
-            "photo" => $this->photo,
-        ];
-
-        $_SESSION["user"] = $arrayUser;
-        setcookie("user","Logado",time()+60*60,"/");
-        return true;
     }
 
-    public function getArray() : array
+    public function update($id, $nome, $descricao, $idCategoria, $preco, $unidade_medida)
     {
-        return ["user" => [
-            "id" => $this->getId(),
-            "name" => $this->getName(),
-            "email" => $this->getEmail(),
-            "document" => $this->getDocument(),
-            "photo" => $this->getPhoto()
-        ]];
+        // Query de atualização
+        $query = "UPDATE produtos 
+                SET nome = :nome, descricao = :descricao, idCategoria = :idCategoria, preco = :preco, unidade_medida = :unidade_medida
+                WHERE id = :id";
+
+        // Prepara a conexão
+        $stmt = Connect::getInstance()->prepare($query);
+
+        // Liga os parâmetros aos valores
+        $stmt->bindParam(":id", $id);
+        $stmt->bindParam(":nome", $nome);
+        $stmt->bindParam(":descricao", $descricao);
+        $stmt->bindParam(":idCategoria", $idCategoria);
+        $stmt->bindParam(":preco", $preco);
+        $stmt->bindParam(":unidade_medida", $unidade_medida);
+
+        // Executa a query
+        $stmt->execute();
+
+        // Retorna se houve alterações
+        if ($stmt->rowCount() > 0) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
 }

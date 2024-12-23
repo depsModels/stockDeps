@@ -1,15 +1,28 @@
 {
-  "name": "elano-tavares/valen",
-  "description": "Valen - Gerenciador de Arquivos",
+  "name": "depsmodels/stockdeps",
+  "description": "stockDeps",
   "minimum-stability": "stable",
+  "license": "proprietary",
   "authors": [
     {
-      "name": "Elano Tavares",
+      "name": "Elano Tavares do Nascimento",
       "email": "elano.tavares.ncs@gmail.com",
-      "homepage": "https://www.ifsul.edu.br",
+      "homepage": "https://depsmodels.com",
       "role": "Developer"
-    }
-  ],
+  },
+  {
+      "name": "Miguel Leonardo Strapazon Lewandowski",
+      "email": "miguelstrapazonl@gmail.com",
+      "homepage": "https://depsmodels.com",
+      "role": "Developer"
+  },
+  {
+      "name": "Raul Lize Teixeira",
+      "email": "raullizeteixeira@gmail.com",
+      "homepage": "https://depsmodels.com",
+      "role": "Developer"
+  }
+],
   "config": {
     "vendor-dir": "vendor"
   },
@@ -26,6 +39,7 @@
     "dompdf/dompdf": "^2.0",
     "coffeecode/router": "1.0.8",
     "coffeecode/uploader": "1.0.11",
-    "league/plates": "v3.4.0"
+    "league/plates": "v3.4.0",
+    "smalot/pdfparser": "^2.11"
   }
 }

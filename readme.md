@@ -1,18 +1,42 @@
-## Estrutura básica para MVC
-> Aqui temos uma estrutura de arquivos para o desenvolvimento de uma aplicação Web seguindo o padrão de desenvolvimento de software MVC.
-A aplicação se divide em três partes:
-- Área pública (acesso para todos que tiverem o endereço);
-- Aplicação do usuário (acesso restrito ao usuário, autenticação por e-mail e senha);
-- Área administrativa do site (somente o(s) administrador(es) do site/sistema acessam, autenticação também é feita por email e senha)
-> Os acessos são feitos pelas seguintes uri:
-- /
-- /sobre
-- /app
-- /app/lista
-- /app/pdf
-- /admin
-### Módulos externos instalados via Composer
-> Não esqueçam de rodar o “composer update” para fazer o download dos arquivos das bibliotecas.
-- coffeecode/router (controlador de rotas)
-- dompdf/dompdf (criação de arquivos em PDF)
-- league/plates (sistema de templates PHP nativo que é rápido, fácil de usar e fácil de estender)
+# Stock DEPS 📊📦
+
+O **Stock DEPS** é um sistema de gerenciamento de estoque robusto e intuitivo, desenvolvido para facilitar a organização e controle de produtos, clientes, fornecedores e movimentações de estoque. O sistema foi projetado com tecnologias modernas e utiliza a arquitetura **MVC** (Model-View-Controller) para oferecer uma solução escalável e eficiente.
+
+---
+
+## 🔧 Tecnologias Utilizadas
+
+- **PHP**: Para a lógica de back-end e comunicação com o banco de dados.
+- **CSS**: Para estilização e apresentação visual.
+- **JavaScript**: Para a interatividade e funcionalidades dinâmicas.
+- **Bootstrap**: Para garantir uma interface moderna e responsiva.
+- **Arquitetura MVC**: Para manter a organização modular do sistema, separando dados (Model), interface (View) e lógica de aplicação (Controller).
+
+---
+
+## 🖥 Funcionalidades Principais
+
+### Dashboard
+- Resumo geral com:
+  - Total de produtos cadastrados.
+  - Produtos em estoque.
+  - Produtos com estoque baixo (alerta de necessidade de reposição).
+  - Produtos sem estoque.
+  - Total de clientes e fornecedores cadastrados.
+  - Total de entradas e saídas de produtos.
+- Ferramentas visuais:
+  - **Lucro por Período**: Cálculo do lucro em um intervalo de tempo definido.
+  - **Gráfico de Pizza**: Distribuição visual dos produtos por categoria.
+  - **Produtos Mais Vendidos**: Lista detalhada dos itens com maior número de vendas.
+
+### Gerenciamento de Estoque
+- Cadastro de categorias e produtos.
+- Gerenciamento de entradas e saídas do estoque.
+- Edição e exclusão de produtos para manter os dados atualizados.
+
+### Clientes e Fornecedores
+- Cadastro e gerenciamento de informações de clientes.
+- Cadastro e gerenciamento de fornecedores.
+
+### Relatórios
+- Geração de relatórios em **PDF** contendo informações relevantes, como movimentações do estoque, clientes cadastrados e fornecedores.

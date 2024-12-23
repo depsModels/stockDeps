@@ -9,31 +9,19 @@ class Clientes
     private $id;
     private $nome;
     private $cpf;
-    private $email;
     private $celular;
-    private $cidade;
-    private $bairro;
-    private $uf;
 
     public function __construct(
         int $id = NULL,
         string $nome = NULL,
         string $cpf = NULL,
-        string $email = NULL,
-        string $celular = NULL,
-        string $cidade= NULL,
-        string $bairro = NULL,
-        string $uf = NULL
+        string $celular = NULL
     )
     {
         $this->id = $id;
         $this->nome = $nome;
         $this->cpf = $cpf;
-        $this->email = $email;
         $this->celular = $celular;
-        $this->cidade = $cidade;
-        $this->bairro = $bairro;
-        $this->uf = $uf;
     }
 
     /**
@@ -87,22 +75,6 @@ class Clientes
     /**
      * @return string|null
      */
-    public function getEmail(): ?string
-    {
-        return $this->email;
-    }
-
-    /**
-     * @param string|null $email
-     */
-    public function setEmail(?string $email): void
-    {
-        $this->email = $email;
-    }
-
-    /**
-     * @return string|null
-     */
     public function getCelular(): ?string
     {
         return $this->celular;
@@ -116,54 +88,7 @@ class Clientes
         $this->celular = $celular;
     }
 
-    /**
-     * @return string|null
-     */
-    public function getCidade(): ?string
-    {
-        return $this->cidade;
-    }
-
-    /**
-     * @param string|null $cidade
-     */
-    public function setCidade(?string $cidade): void
-    {
-        $this->cidade = $cidade;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getBairro(): ?string
-    {
-        return $this->bairro;
-    }
-
-    /**
-     * @param mixed $bairro
-     */
-    public function setBairro($bairro): void
-    {
-        $this->bairro = $bairro;
-    }
-
-
-
-    public function getUf(): ?string
-    {
-        return $this->uf;
-    }
-
-   /**
-     * @param mixed $uf
-     */
-    public function setUf($uf): void
-    {
-        $this->uf = $uf;
-    }
-
-    public function selectAll ()
+    public function selectAll (): array|bool
     {
         $query = "SELECT * FROM clientes";
         $stmt = Connect::getInstance()->prepare($query);
@@ -176,7 +101,7 @@ class Clientes
         }
     }
 
-    public function findByIdName($nome) 
+    public function findByIdName($nome): mixed 
     {
         $query = "SELECT * FROM clientes WHERE nome = :nome";
         $stmt = Connect::getInstance()->prepare($query);
@@ -205,7 +130,8 @@ class Clientes
         }
     }
 
-    public function getHistoricoSaidas($idCliente){
+    public function getHistoricoSaidas($idCliente): array|string
+    {
         $query = "SELECT p.nome AS nomeProduto, c.nome as nomeCategoria, s.quantidade, s.created_at FROM saidas s JOIN produtos p ON s.idProdutos = p.id 
         JOIN categorias c ON s.idCategoria = c.id WHERE s.idClientes = :idCliente;";
          $stmt = Connect::getInstance()->prepare($query);
@@ -223,7 +149,8 @@ class Clientes
         return $resultados;
     }
 
-    public function getDadosCliente($idCliente){
+    public function getDadosCliente($idCliente): array|string
+    {
         $query = "SELECT * FROM clientes WHERE id = :idCliente;";
         $stmt = Connect::getInstance()->prepare($query);
         $stmt->bindParam(":idCliente", $idCliente);
@@ -239,100 +166,64 @@ class Clientes
 
        return $resultados;
     }
-/*
-    public function update()
-    {
-        $query = "UPDATE users SET name = :name, email = :email, photo = :photo, document = :document WHERE id = :id";
-        $stmt = Connect::getInstance()->prepare($query);
-        $stmt->bindParam(":name",$this->name);
-        $stmt->bindParam(":email",$this->email);
-        $stmt->bindParam(":photo",$this->photo);
-        $stmt->bindParam(":document",$this->document);
-        $stmt->bindParam(":id",$this->id);
-        $stmt->execute();
-        $arrayUser = [
-            "id" => $this->id,
-            "name" => $this->name,
-            "email" => $this->email,
-            "photo" => $this->photo,
-            "document" => $this->document
-        ];
-        $_SESSION["user"] = $arrayUser;
-        $this->message = "Usuário alterado com sucesso!";
-    }
 
-*/
-    /*finalizar a insert*/
-
-    public function insert() 
+    public function insert(): bool 
     {
-        $query = "INSERT INTO clientes (nome, cpf, email, celular, cidade, bairro, uf) 
-                  VALUES (:nome, :cpf, :email, :celular, :cidade, :bairro, :uf)";
+        $query = "INSERT INTO clientes (nome, cpf, celular) 
+                  VALUES (:nome, :cpf, :celular)";
 
         $stmt = Connect::getInstance()->prepare($query);
 
         $stmt->bindParam(":nome", $this->nome);
         $stmt->bindParam(":cpf", $this->cpf);
-        $stmt->bindValue(":email", $this->email);
         $stmt->bindParam(":celular",$this->celular);
-        $stmt->bindParam(":cidade",$this->cidade);
-        $stmt->bindParam(":bairro",$this->bairro);
-        $stmt->bindParam(":uf",$this->uf);
 
         $stmt->execute();
 
         return true;
     }
 
-    /*
-
-    public function validate (string $email, string $password) : bool
+    public function delete($id)
     {
-        $query = "SELECT * FROM users WHERE email LIKE :email";
+        $query = "DELETE FROM clientes WHERE id = :id";
+
         $stmt = Connect::getInstance()->prepare($query);
-        $stmt->bindParam(":email", $email);
+        $stmt->bindParam(":id", $id);
+
         $stmt->execute();
 
-        if($stmt->rowCount() == 0){
-            $this->message = "Usuário e/ou Senha não cadastrados!";
+        if ($stmt->rowCount() == 0) {
             return false;
         } else {
-            $user = $stmt->fetch();
-            if(!password_verify($password, $user->password)){
-                $this->message = "Usuário e/ou Senha não cadastrados!";
-                return false;
-            }
+            return true;
         }
-
-        $this->id = $user->id;
-        $this->name = $user->name;
-        $this->email = $user->email;
-        $this->document = $user->document;
-        $this->message = "Usuário Autorizado, redirect to APP!";
-
-        $arrayUser = [
-            "id" => $this->id,
-            "name" => $this->name,
-            "email" => $this->email,
-            "photo" => $this->photo,
-        ];
-
-        $_SESSION["user"] = $arrayUser;
-        setcookie("user","Logado",time()+60*60,"/");
-        return true;
     }
 
-    public function getArray() : array
+    public function update($id, $nome, $cpf, $celular)
     {
-        return ["user" => [
-            "id" => $this->getId(),
-            "name" => $this->getName(),
-            "email" => $this->getEmail(),
-            "document" => $this->getDocument(),
-            "photo" => $this->getPhoto()
-        ]];
-    }
+        // Query de atualização
+        $query = "UPDATE clientes 
+                SET nome = :nome, cpf = :cpf, celular = :celular 
+                WHERE id = :id";
 
-*/
+        // Prepara a conexão
+        $stmt = Connect::getInstance()->prepare($query);
+
+        // Liga os parâmetros aos valores
+        $stmt->bindParam(":id", $id);
+        $stmt->bindParam(":nome", $nome);
+        $stmt->bindParam(":cpf", $cpf);
+        $stmt->bindParam(":celular", $celular);
+
+        // Executa a query
+        $stmt->execute();
+
+        // Retorna se houve alterações
+        if ($stmt->rowCount() > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 
 } 
