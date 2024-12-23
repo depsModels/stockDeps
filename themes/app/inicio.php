@@ -101,13 +101,9 @@ $this->layout("_theme");
                                 <select id="periodo" class="form-select" onchange="calcularLucro()">
                                     <option value="total">Total</option>
                                     <option value="dia">Dia</option>
-                                    <option value="tresDias">Tres dias</option>
                                     <option value="semana">Semana</option>
                                     <option value="duasSemanas">Duas semanas</option>
                                     <option value="mes">Mês</option>
-                                    <option value="trimestre">Trimestre</option>
-                                    <option value="semestre">Semestre</option>
-                                    <option value="ano">Ano</option>
                                 </select>
                             </div>
                             <div>

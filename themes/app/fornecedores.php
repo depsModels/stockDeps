@@ -82,7 +82,7 @@ $this->layout("_theme");
                         </div>
                         <div class="mb-3">
                             <label for="cepFornecedor" class="form-label">CEP</label>
-                            <input name="cep" type="number" class="form-control" id="cepFornecedor" placeholder="Digite o CEP">
+                            <input name="cep" type="text" class="form-control" id="cepFornecedor" placeholder="Digite o CEP">
                         </div>
                         <div class="mb-3">
                             <label for="ufFornecedor" class="form-label">UF</label>

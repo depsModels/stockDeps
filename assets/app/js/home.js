@@ -220,8 +220,8 @@ async function calcularLucro() {
 function calcularLucroBruto(saidas) {
   if (saidas.length === 0) return 0; // Sem vendas, lucro bruto é zero
   return saidas.reduce((total, saida) => {
-    const preco = parseFloat(saida.preco) || 0;
-    const quantidade = parseInt(saida.quantidade) || 0;
+    const preco = parseFloat(saida.preco.toString().replace(',', '.')) || 0;
+    const quantidade = parseFloat(saida.quantidade.toString().replace(',', '.')) || 0;
     return total + (preco * quantidade);
   }, 0);
 }
@@ -230,13 +230,14 @@ function calcularLucroLiquido(entradas, saidas) {
   const lucroBruto = calcularLucroBruto(saidas);
 
   const totalEntradas = entradas.reduce((total, entrada) => {
-    const preco = parseFloat(entrada.preco) || 0;
-    const quantidade = parseInt(entrada.quantidade) || 0;
+    const preco = parseFloat(entrada.preco.toString().replace(',', '.')) || 0;
+    const quantidade = parseFloat(entrada.quantidade.toString().replace(',', '.')) || 0;
     return total + (preco * quantidade);
   }, 0);
 
   return lucroBruto - totalEntradas; // Receita - Custo
 }
+
 
 function calcularLucroPorPeriodo(periodo) {
   const now = new Date(); // Data atual

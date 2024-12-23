@@ -941,13 +941,19 @@ function ordenarTabela(coluna, idSeta) {
     produtosOrdenados = [...produtosFiltrados].sort((a, b) => {
         let valorA = a[coluna];
         let valorB = b[coluna];
-
+    
         // Se for uma string, converter para minúscula para comparar corretamente
         if (typeof valorA === "string") {
             valorA = valorA.toLowerCase();
             valorB = valorB.toLowerCase();
         }
-
+    
+        // Converter para número se for numérico
+        if (!isNaN(valorA) && !isNaN(valorB)) {
+            valorA = Number(valorA);
+            valorB = Number(valorB);
+        }
+    
         // Comparar de acordo com a ordem crescente ou decrescente
         if (ordemAtual.crescente) {
             return valorA > valorB ? 1 : valorA < valorB ? -1 : 0;
@@ -961,7 +967,7 @@ function ordenarTabela(coluna, idSeta) {
 
 
 
-document.getElementById("ordenarCodigo").addEventListener("click", () => ordenarTabela("id", "setaCodigo"));
+document.getElementById("ordenarCodigo").addEventListener("click", () => ordenarTabela("codigo_produto", "setaCodigo"));
 document.getElementById("ordenarNome").addEventListener("click", () => ordenarTabela("nome", "setaNome"));
 document.getElementById("ordenarPreco").addEventListener("click", () => ordenarTabela("preco", "setaPreco"));
 document.getElementById("ordenarQuantidade").addEventListener("click", () => ordenarTabela("quantidade", "setaQuantidade"));

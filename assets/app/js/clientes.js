@@ -259,6 +259,27 @@ function aplicarOrdenacaoClientes() {
 }
 
 
-
-
 document.getElementById("ordenarNomeCliente").addEventListener("click", () => ordenarTabelaClientes("nome", "setaNomeCliente"));
+
+function formatarTelefone(event) {
+    const input = event.target;
+    let valor = input.value.replace(/\D/g, ''); // Remove caracteres não numéricos
+    if (valor.length > 11) valor = valor.slice(0, 11); // Limita a 11 caracteres
+
+    const tamanhoAnterior = input.dataset.previousLength || 0;
+    input.dataset.previousLength = valor.length;
+
+    if (tamanhoAnterior > valor.length) {
+        input.value = valor; // Não aplica máscara ao apagar
+        return;
+    }
+
+    if (valor.length <= 10) {
+        input.value = valor.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+    } else {
+        input.value = valor.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+    }
+}
+
+document.getElementById('telefoneCliente').addEventListener('input', formatarTelefone);
+

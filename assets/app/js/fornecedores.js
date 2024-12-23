@@ -331,3 +331,22 @@ function formatarTelefone(event) {
 }
 
 document.getElementById('telefoneFornecedor').addEventListener('input', formatarTelefone);
+
+function formatarCEP(event) {
+    const input = event.target;
+    let valor = input.value.replace(/\D/g, ''); // Remove caracteres não numéricos
+    
+    if (valor.length > 8) valor = valor.slice(0, 8); // Limita a 8 caracteres
+
+    // Aplica a máscara do CEP apenas se o usuário estiver digitando
+    if (valor.length > 5) {
+        input.value = valor.replace(/(\d{5})(\d{0,3})/, '$1-$2');
+    } else {
+        input.value = valor; // Exibe os números sem máscara até 5 dígitos
+    }
+}
+
+
+
+// Adiciona o evento ao campo de entrada
+document.getElementById('cepFornecedor').addEventListener('input', formatarCEP);
