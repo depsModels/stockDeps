@@ -124,23 +124,36 @@ function limparTabela(selector, mensagem) {
     if (tabela) tabela.innerHTML = `<tr><td colspan="6" class="text-center">${mensagem}</td></tr>`;
 }
 
+
+
 function removerClienteLocalmente(idCliente) {
     // Remove o cliente da lista
     clientes = clientes.filter(cliente => cliente.id !== idCliente);
     clientesFiltrados = [...clientes]; // Atualiza os filtrados com a lista geral
 
     // Ajusta a página atual e exibe a tabela
-    const totalPaginas = Math.ceil(clientesFiltrados.length / itensPorPaginaClientes);
-    if (paginaAtualClientes > totalPaginas) {
-        paginaAtualClientes = totalPaginas || 1; // Ajusta para a última página válida
-    }
+    const totalPaginas = Math.ceil(clientesFiltrados.length / itensPorPaginaClientes) || 1; // Garantir pelo menos 1 página
+    paginaAtualClientes = Math.min(paginaAtualClientes, totalPaginas); // Ajusta para uma página válida
     mostrarPaginaClientes(paginaAtualClientes);
+}
+
+function removerFornecedorLocalmente(idFornecedor) {
+    // Remove o fornecedor da lista
+    fornecedores = fornecedores.filter(fornecedor => fornecedor.id !== idFornecedor);
+    fornecedoresFiltrados = [...fornecedores]; // Atualiza os filtrados com a lista geral
+
+    // Ajusta a página atual e exibe a tabela
+    const totalPaginas = Math.ceil(fornecedoresFiltrados.length / itensPorPaginaFornecedores) || 1; // Garantir pelo menos 1 página
+    paginaAtualFornecedores = Math.min(paginaAtualFornecedores, totalPaginas); // Ajusta para uma página válida
+    mostrarPaginaFornecedores(paginaAtualFornecedores);
 }
 
 
 async function atualizarClientes() {
     try {
         const response = await fetch(`${BASE_URL}/getClientes`);
+        if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
+        
         clientes = await response.json();
         clientesFiltrados = [...clientes];
         aplicarOrdenacaoClientes();
@@ -148,12 +161,15 @@ async function atualizarClientes() {
     } catch (error) {
         console.error("Erro ao atualizar clientes:", error);
         exibirMensagemTemporariaErro("Erro ao atualizar a lista de clientes.");
+        limparTabelaClientes(); // Limpa a tabela em caso de erro
     }
 }
 
 async function atualizarFornecedores() {
     try {
         const response = await fetch(`${BASE_URL}/getFornecedores`);
+        if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
+        
         fornecedores = await response.json();
         fornecedoresFiltrados = [...fornecedores];
         aplicarOrdenacaoFornecedores();
@@ -161,20 +177,13 @@ async function atualizarFornecedores() {
     } catch (error) {
         console.error("Erro ao atualizar fornecedores:", error);
         exibirMensagemTemporariaErro("Erro ao atualizar a lista de fornecedores.");
+        limparTabelaFornecedores(); // Limpa a tabela em caso de erro
     }
 }
 
-function removerFornecedorLocalmente(idFornecedor) {
-    fornecedores = fornecedores.filter(fornecedor => fornecedor.id !== idFornecedor);
-    fornecedoresFiltrados = [...fornecedores]; // Atualiza os filtrados com a lista geral
 
-    // Ajusta a página atual e exibe a tabela
-    const totalPaginas = Math.ceil(fornecedoresFiltrados.length / itensPorPaginaFornecedores);
-    if (paginaAtualFornecedores > totalPaginas) {
-        paginaAtualFornecedores = totalPaginas || 1; // Ajusta para a última página válida
-    }
-    mostrarPaginaFornecedores(paginaAtualFornecedores);
-}
+
+
 
 handleDeleteFormSubmission("#produto-excluir", `${BASE_URL}/estoque-pd`, (response) => {
     if (response.produtoExcluidoId) atualizadores.produtos.remover(response.produtoExcluidoId);

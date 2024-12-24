@@ -26,8 +26,6 @@ async function fetchProdutos() {
     buscarProduto(); // Inicializa o evento de busca
     mostrarPagina(paginaAtual); // Mostra a primeira página
 }
-
-
 async function fetchCategorias() {
     const response = await fetch(`${BASE_URL}/getCategorias`);
     categorias = await response.json();
@@ -206,7 +204,7 @@ function mostrarPaginaEntradas(pagina) {
 
 function mostrarPaginaSaidas(pagina) {
     console.log('Mostrando página das saídas:', pagina);
-    
+
     const inicio = (pagina - 1) * itensPorPagina;
     const fim = inicio + itensPorPagina;
 
@@ -217,14 +215,22 @@ function mostrarPaginaSaidas(pagina) {
     const tabela = document.querySelector("#tabelaSaidas tbody");
     tabela.innerHTML = ''; // Limpa a tabela
 
+    // Verifica se há saídas a serem exibidas
     if (saidasPagina.length === 0) {
         tabela.innerHTML = `<tr><td colspan="6" class="text-center">Nenhuma saída encontrada.</td></tr>`;
         return;
     }
 
+    // Verifica se o array clientes está definido e contém elementos
+    const clientesValidos = Array.isArray(clientes) && clientes.length > 0;
+
     saidasPagina.forEach(saida => {
         const nomeProduto = produtosOriginais.find(p => p.id === saida.idProdutos)?.nome || 'Produto não encontrado';
-        const nomeCliente = clientes.find(c => c.id === saida.idClientes)?.nome || 'Cliente não encontrado';
+        
+        // Usa "Cliente não encontrado" se o array clientes for inválido ou cliente não encontrado
+        const nomeCliente = clientesValidos 
+            ? (clientes.find(c => c.id === saida.idClientes)?.nome || 'Cliente não encontrado') 
+            : 'Cliente não encontrado';
 
         const row = `
             <tr>
@@ -243,6 +249,7 @@ function mostrarPaginaSaidas(pagina) {
 
     configurarPaginacao(saidasFiltradas.length, mostrarPaginaSaidas, '#paginacaoSaidas', pagina);
 }
+
 
 
 function filtrarEntradasPorData() {
