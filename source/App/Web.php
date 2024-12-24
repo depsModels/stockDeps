@@ -37,6 +37,15 @@ class Web
         $user = new Users();
         $userDados = $user->selectUserByName($data["username"]);
 
+        if($userDados == false){
+            $json = [
+                "message" => "Usuário não cadastrado!",
+                "type" => "error"
+            ];
+            echo json_encode($json);
+            return;
+        }
+
         if (password_verify($data["password"], $userDados->password)) {
             $session->set("user", [
                 "id" => $userDados->id,
