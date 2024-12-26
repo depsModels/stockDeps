@@ -113,6 +113,20 @@ class Entradas
         }
     }
 
+    public function selectAllByIdFornecedor(int $id): array|bool
+    {
+        $query = "SELECT * FROM entradas WHERE idFornecedor = :id";
+        $stmt = Connect::getInstance()->prepare($query);
+        $stmt->bindParam(':id', $id);
+        $stmt->execute();
+    
+        if ($stmt->rowCount() == 0) {
+            return false;
+        } else {
+            return $stmt->fetchAll();
+        }
+    }
+
     public function selectInfoEntradaById($id)
     {
         $query = "SELECT * FROM entradas WHERE id = :id";

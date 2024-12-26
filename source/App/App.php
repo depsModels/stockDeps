@@ -85,11 +85,6 @@ class App
         echo $this->view->render("clientes");
     }
 
-    public function login()
-    {
-        echo $this->view->render("login");
-    }
-
 
 
 
@@ -924,6 +919,17 @@ class App
                 ];
                 echo json_encode($json);
                 return;
+            }
+
+            $entrada = new Entradas();
+            $allEntradas = $entrada->selectAllByIdFornecedor($data["idFornecedorExcluir"]);
+
+            if (!empty($allEntradas)) {
+                $produto = new Produtos();
+
+                foreach ($allEntradas as $entrada) {
+                    $produto->subtraiQuantidadeProdutos($entrada->idProdutos, $entrada->quantidade);
+                }
             }
 
             $fornecedor = new Fornecedores();
