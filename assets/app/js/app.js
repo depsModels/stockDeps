@@ -970,13 +970,19 @@ function openModal(tipo, produto) {
     // Selecionar a unidade do produto
     unidadeSelect.value = unidadeMedida;
 
-    // Configurar preço com formato BRL
-    document.getElementById("precoProduto").value =
-      produto.preco.toLocaleString("pt-BR", {
-        style: "currency",
-        currency: "BRL",
-      });
 
+    const precoProduto = document.getElementById("precoProduto");
+
+    // Garante que `produto.preco` seja um número válido antes de formatar
+    let preco = produto.preco ? parseFloat(produto.preco) : 0;
+    
+    // Define o valor formatado no campo de entrada
+    precoProduto.value = preco.toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+
+    
     // Configurar categorias no select
     const categoria = categorias.find(
       (categoria) => categoria.id === produto.idCategoria

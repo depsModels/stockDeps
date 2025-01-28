@@ -1,7 +1,7 @@
 <?php
 
 namespace Source\Models;
-
+use PDO;
 use Source\Core\Connect;
 
 class Produtos
@@ -188,6 +188,17 @@ class Produtos
         }
     }
 
+    public function getById($id)
+    {
+        $pdo = Connect::getInstance(); // Garante que está chamando corretamente a conexão
+        $query = "SELECT * FROM produtos WHERE id = :id";
+        $stmt = $pdo->prepare($query);
+        $stmt->bindParam(":id", $id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+    
+
     public function validateProduto($nome, $idCategoria, $codigo_produto): bool
     {
         $query = "SELECT * FROM produtos WHERE (nome = :nome AND idCategoria = :idCategoria) OR (codigo_produto = :codigo_produto)";
@@ -285,28 +296,46 @@ class Produtos
         }
     }
 
-    public function update($id, $nome, $descricao, $idCategoria, $preco, $imagem, $unidade_medida)
+    public function update($id, $nome = null, $descricao = null, $idCategoria = null, $preco = null, $imagem = null, $unidade_medida = null)
     {
-        // Query de atualização
-        $query = "UPDATE produtos 
-                SET nome = :nome, descricao = :descricao, idCategoria = :idCategoria, preco = :preco, imagem = :imagem, unidade_medida = :unidade_medida
-                WHERE id = :id";
-
-        // Prepara a conexão
+        $query = "UPDATE produtos SET";
+        $params = [];
+        
+        if (!is_null($nome)) {
+            $query .= " nome = :nome,";
+            $params[":nome"] = $nome;
+        }
+        if (!is_null($descricao)) {
+            $query .= " descricao = :descricao,";
+            $params[":descricao"] = $descricao;
+        }
+        if (!is_null($idCategoria)) {
+            $query .= " idCategoria = :idCategoria,";
+            $params[":idCategoria"] = $idCategoria;
+        }
+        if (!is_null($preco)) {
+            $query .= " preco = :preco,";
+            $params[":preco"] = $preco;
+        }
+        if (!is_null($imagem)) {
+            $query .= " imagem = :imagem,";
+            $params[":imagem"] = $imagem;
+        }
+        if (!is_null($unidade_medida)) {
+            $query .= " unidade_medida = :unidade_medida,";
+            $params[":unidade_medida"] = $unidade_medida;
+        }
+    
+        // Removendo a última vírgula para evitar erro de SQL
+        $query = rtrim($query, ',');
+        
+        $query .= " WHERE id = :id";
+        $params[":id"] = $id;
+    
+        // Prepara e executa a query
         $stmt = Connect::getInstance()->prepare($query);
-
-        // Liga os parâmetros aos valores
-        $stmt->bindParam(":id", $id);
-        $stmt->bindParam(":nome", $nome);
-        $stmt->bindParam(":descricao", $descricao);
-        $stmt->bindParam(":idCategoria", $idCategoria);
-        $stmt->bindParam(":preco", $preco);
-        $stmt->bindParam(":imagem", $imagem);
-        $stmt->bindParam(":unidade_medida", $unidade_medida);
-
-        // Executa a query
-        $stmt->execute();
-
+        $stmt->execute($params);
+    
         // Retorna se houve alterações
         if ($stmt->rowCount() > 0) {
             return true;

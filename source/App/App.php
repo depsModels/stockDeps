@@ -223,67 +223,61 @@ class App
     public function estoquePu(?array $data): void
     {
         if (!empty($data)) {
-
-            $newpreco = $data["preco"];
-            $newpreco = str_replace('R$', '', $newpreco);
-            $newpreco = str_replace('.', '', $newpreco);
-            $newpreco = str_replace(',', '.', $newpreco);
-            $precoFloat = (float)$newpreco;
-
+            // Processamento do preço
+            $precoFloat = isset($data["preco"]) ? (float) str_replace(['R$', '.', ','], ['', '', '.'], $data["preco"]) : null;
+    
             $entradas = new Entradas();
             $saidas = new Saidas();
-
             $image = new Image("uploads", "images", true);
-
+            $produtos = new Produtos();
+    
+            // Buscar o produto no banco ANTES de atualizar
+            $produtoAtual = $produtos->getById($data["idProdutoUpdate"]); // Nova função para pegar os dados atuais
+            $precoAtual = $produtoAtual["preco"] ?? null;
+            $imagemAtual = $produtoAtual["imagem"] ?? null;
+    
+            // Se não houver um novo preço enviado, mantenha o preço atual
+            $precoFloat = $precoFloat ?? $precoAtual;
+    
+            // Processamento da imagem
             if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
                 $site = "https://stockdeps.com/";
 
                 // Extrair a extensão do arquivo
                 $fileExtension = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
-
-                // Gerar um novo nome de arquivo único
                 $uniqueFileName = $data['nome'] . "_" . time() . "." . $fileExtension;
-
-                // Upload com o nome único
                 $upload = $image->upload($_FILES['image'], $uniqueFileName);
                 $link = $site . $upload;
             } else {
-                $link = null;
+                $link = $imagemAtual; // Mantém a imagem existente caso não haja novo upload
             }
-
-            $produtos = new Produtos();
+    
+            // Atualiza o produto
             $produtoAtualizado = $produtos->update(
                 $data["idProdutoUpdate"],
-                $data["nome"],
-                $data["descricao"],
-                $data["categoria"],
+                $data["nome"] ?? $produtoAtual["nome"],
+                $data["descricao"] ?? $produtoAtual["descricao"],
+                $data["categoria"] ?? $produtoAtual["categoria"],
                 $precoFloat,
-                $link,
-                $data["unidade"]
+                $link, // Mantém a imagem existente se não for enviada uma nova
+                $data["unidade"] ?? $produtoAtual["unidade"]
             );
-
-            if ($produtoAtualizado) {
-                $json = [
-                    "entradas" => $entradas->selectAll(),
-                    "saidas" => $saidas->selectAll(),
-                    "produtos" => $produtos->selectAll(),
-                    "message" => "Produto atualizado com sucesso!",
-                    "type" => "success"
-                ];
-                echo json_encode($json);
-                return;
-            } else {
-                $json = [
-                    "message" => "Produto não atualizado!",
-                    "type" => "error"
-                ];
-                echo json_encode($json);
-                return;
-            }
+    
+            $json = $produtoAtualizado ? [
+                "entradas" => $entradas->selectAll(),
+                "saidas" => $saidas->selectAll(),
+                "produtos" => $produtos->selectAll(),
+                "message" => "Produto atualizado com sucesso!",
+                "type" => "success"
+            ] : [
+                "message" => "Produto não atualizado!",
+                "type" => "error"
+            ];
+    
+            echo json_encode($json);
         }
     }
-
-
+    
 
 
 

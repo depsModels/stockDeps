@@ -1,7 +1,7 @@
 {
   "name": "depsmodels/stockdeps",
   "description": "StockDeps - Sistema de controle de estoque desenvolvido pela DEPS",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "project",
   "minimum-stability": "stable",
   "license": "proprietary",
