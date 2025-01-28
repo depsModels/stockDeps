@@ -1,4 +1,4 @@
-const BASE_URL = '/stockDeps/app';
+const BASE_URL = '/app';
 const itensPorPagina = 8;
 const maxBotoesPaginacao = 5; // Limite de botões de página exibidos
 let paginaAtual = 1;

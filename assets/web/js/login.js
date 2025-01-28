@@ -22,10 +22,6 @@ form_login.on("submit", function (e) {
                 return;
             }
             if (response.type === 'success') {
-                if (response.user === 'Admin') {
-                    window.location.href = `${BASE_URL}/adm`;
-                    return;
-                }
                 window.location.href = `${BASE_URL}/app`;
                 return;
             }
@@ -36,5 +32,3 @@ form_login.on("submit", function (e) {
         }
     });
 });
-
-

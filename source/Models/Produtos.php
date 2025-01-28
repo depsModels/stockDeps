@@ -24,8 +24,7 @@ class Produtos
         string $imagem = NULL,
         string $unidade_medida = NULL,
         string $codigo_produto = NULL
-    )
-    {
+    ) {
         $this->id = $id;
         $this->idCategoria = $idCategoria;
         $this->nome = $nome;
@@ -118,7 +117,7 @@ class Produtos
 
     /**
      * Get the value of imagem
-     */ 
+     */
     public function getImagem()
     {
         return $this->imagem;
@@ -128,7 +127,7 @@ class Produtos
      * Set the value of imagem
      *
      * @return  self
-     */ 
+     */
     public function setImagem($imagem)
     {
         $this->imagem = $imagem;
@@ -138,7 +137,7 @@ class Produtos
 
     /**
      * Get the value of unidade_medida
-     */ 
+     */
     public function getUnidade_medida()
     {
         return $this->unidade_medida;
@@ -148,7 +147,7 @@ class Produtos
      * Set the value of unidade_medida
      *
      * @return  self
-     */ 
+     */
     public function setUnidade_medida($unidade_medida)
     {
         $this->unidade_medida = $unidade_medida;
@@ -158,7 +157,7 @@ class Produtos
 
     /**
      * Get the value of codigo_produto
-     */ 
+     */
     public function getCodigo_produto()
     {
         return $this->codigo_produto;
@@ -168,7 +167,7 @@ class Produtos
      * Set the value of codigo_produto
      *
      * @return  self
-     */ 
+     */
     public function setCodigo_produto($codigo_produto)
     {
         $this->codigo_produto = $codigo_produto;
@@ -176,20 +175,20 @@ class Produtos
         return $this;
     }
 
-    public function selectAll ()
+    public function selectAll()
     {
         $query = "SELECT * FROM produtos";
         $stmt = Connect::getInstance()->prepare($query);
         $stmt->execute();
 
-        if($stmt->rowCount() == 0){
+        if ($stmt->rowCount() == 0) {
             return false;
         } else {
             return $stmt->fetchAll();
         }
     }
 
-    public function validateProduto($nome, $idCategoria, $codigo_produto) : bool
+    public function validateProduto($nome, $idCategoria, $codigo_produto): bool
     {
         $query = "SELECT * FROM produtos WHERE (nome = :nome AND idCategoria = :idCategoria) OR (codigo_produto = :codigo_produto)";
         $stmt = Connect::getInstance()->prepare($query);
@@ -197,7 +196,7 @@ class Produtos
         $stmt->bindParam(":idCategoria", $idCategoria);
         $stmt->bindParam(":codigo_produto", $codigo_produto);
         $stmt->execute();
-        if($stmt->rowCount() == 1){
+        if ($stmt->rowCount() == 1) {
             return true;
         } else {
             return false;
@@ -210,7 +209,7 @@ class Produtos
         $stmt = Connect::getInstance()->prepare($query);
         $stmt->bindParam(":id", $id);
         $stmt->execute();
-        if($stmt->rowCount() == 1){
+        if ($stmt->rowCount() == 1) {
             $produto = $stmt->fetch();
             return $produto->quantidade;
         } else {
@@ -218,10 +217,11 @@ class Produtos
         }
     }
 
-    public function insert() : bool
+    public function insert(): bool
     {
-        $query = "INSERT INTO produtos (idCategoria, nome, descricao, preco, imagem, unidade_medida, codigo_produto) 
-                    VALUES (:idCategoria, :nome, :descricao, :preco, :imagem, :unidade_medida, :codigo_produto)";
+        $query = "INSERT INTO produtos (idCategoria, nome, descricao, preco, imagem, unidade_medida, codigo_produto, quantidade) 
+                  VALUES (:idCategoria, :nome, :descricao, :preco, :imagem, :unidade_medida, :codigo_produto, :quantidade)";
+
         $stmt = Connect::getInstance()->prepare($query);
         $stmt->bindParam(":idCategoria", $this->idCategoria);
         $stmt->bindParam(":nome", $this->nome);
@@ -230,12 +230,21 @@ class Produtos
         $stmt->bindParam(":imagem", $this->imagem);
         $stmt->bindParam(":unidade_medida", $this->unidade_medida);
         $stmt->bindParam(":codigo_produto", $this->codigo_produto);
+
+        // Garantir que a quantidade seja inserida como 0
+        $quantidade = 0;
+        $stmt->bindParam(":quantidade", $quantidade);
+
         $stmt->execute();
         return true;
     }
 
-    public function somaQuantidadeProdutos(int $idProduto, float $quantidade) 
+
+    public function somaQuantidadeProdutos(int $idProduto, float $quantidade)
     {
+        // Arredonda a quantidade para 3 casas decimais
+        $quantidade = round($quantidade, 3);
+
         $query = "UPDATE produtos SET quantidade = quantidade + :quantidade WHERE id = :idProduto";
 
         $stmt = Connect::getInstance()->prepare($query);
@@ -245,8 +254,11 @@ class Produtos
         return true;
     }
 
-    public function subtraiQuantidadeProdutos(int $idProduto, float $quantidade) 
+    public function subtraiQuantidadeProdutos(int $idProduto, float $quantidade)
     {
+        // Arredonda a quantidade para 3 casas decimais
+        $quantidade = round($quantidade, 3);
+
         $query = "UPDATE produtos SET quantidade = quantidade - :quantidade WHERE id = :idProduto";
 
         $stmt = Connect::getInstance()->prepare($query);
@@ -255,6 +267,7 @@ class Produtos
         $stmt->execute();
         return true;
     }
+
 
     public function delete($id)
     {
@@ -301,5 +314,4 @@ class Produtos
             return false;
         }
     }
-
 }

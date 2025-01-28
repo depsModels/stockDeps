@@ -1,4 +1,4 @@
-const BASE_URL = '/stockDeps/app';
+const BASE_URL = '/app';
 
 const itensPorPaginaFornecedores = 7;
 const maxBotoesPaginacaoFornecedores = 5;

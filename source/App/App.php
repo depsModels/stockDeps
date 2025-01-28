@@ -23,7 +23,7 @@ class App
 
         $session = new Session();
         if (!$session->has("user")) {
-            header("Location: /stockDeps");
+            header("Location: /");
             exit();
         }
     }
@@ -132,7 +132,7 @@ class App
             $image = new Image("uploads", "images", true);
 
             if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-                $site = "http://127.0.0.1/stockDeps/";
+                $site = "https://stockdeps.com/";
                 $upload = $image->upload($_FILES['image'], $data['nome']);
                 $link = $site . $upload;
             } else {
@@ -236,7 +236,7 @@ class App
             $image = new Image("uploads", "images", true);
 
             if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-                $site = "http://127.0.0.1/stockDeps/";
+                $site = "https://stockdeps.com/";
 
                 // Extrair a extensão do arquivo
                 $fileExtension = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
