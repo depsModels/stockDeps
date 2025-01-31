@@ -354,54 +354,44 @@ function configurarPaginacao(
 ) {
   const totalPaginas = Math.ceil(totalItens / itensPorPagina);
   const paginacaoContainer = document.querySelector(seletorPaginacao);
-  paginacaoContainer.innerHTML = ""; // Limpar a página de navegação
+  paginacaoContainer.innerHTML = ""; // Limpa a navegação
+
+  if (totalPaginas <= 1) return; // Se há apenas uma página, não exibe paginação
+
+  const paginaInicial = Math.max(1, paginaAtual - Math.floor(maxBotoesPaginacao / 2));
+  const paginaFinal = Math.min(totalPaginas, paginaInicial + maxBotoesPaginacao - 1);
 
   // Botão "Anterior"
+  const botaoAnterior = document.createElement("li");
+  botaoAnterior.classList.add("page-item");
   if (paginaAtual > 1) {
-    const botaoAnterior = document.createElement("li");
-    botaoAnterior.classList.add("page-item");
-    botaoAnterior.innerHTML = `<a class="page-link" href="#" onclick="${
-      callback.name
-    }(${
-      paginaAtual - 1
-    })" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a>`;
-    paginacaoContainer.appendChild(botaoAnterior);
+    botaoAnterior.innerHTML = `<a class="page-link" href="#" onclick="${callback.name}(${paginaAtual - 1})">&laquo;</a>`;
   } else {
-    // Desabilitar botão anterior se for a primeira página
-    const botaoAnterior = document.createElement("li");
-    botaoAnterior.classList.add("page-item", "disabled");
+    botaoAnterior.classList.add("disabled");
     botaoAnterior.innerHTML = `<span class="page-link">&laquo;</span>`;
-    paginacaoContainer.appendChild(botaoAnterior);
   }
+  paginacaoContainer.appendChild(botaoAnterior);
 
   // Botões de páginas
-  for (let i = 1; i <= totalPaginas; i++) {
+  for (let i = paginaInicial; i <= paginaFinal; i++) {
     const botaoPagina = document.createElement("li");
     botaoPagina.classList.add("page-item");
-    if (i === paginaAtual) {
-      botaoPagina.classList.add("active");
-    }
+    if (i === paginaAtual) botaoPagina.classList.add("active");
+
     botaoPagina.innerHTML = `<a class="page-link" href="#" onclick="${callback.name}(${i})">${i}</a>`;
     paginacaoContainer.appendChild(botaoPagina);
   }
 
   // Botão "Próximo"
+  const botaoProximo = document.createElement("li");
+  botaoProximo.classList.add("page-item");
   if (paginaAtual < totalPaginas) {
-    const botaoProximo = document.createElement("li");
-    botaoProximo.classList.add("page-item");
-    botaoProximo.innerHTML = `<a class="page-link" href="#" onclick="${
-      callback.name
-    }(${
-      paginaAtual + 1
-    })" aria-label="Next"><span aria-hidden="true">&raquo;</span></a>`;
-    paginacaoContainer.appendChild(botaoProximo);
+    botaoProximo.innerHTML = `<a class="page-link" href="#" onclick="${callback.name}(${paginaAtual + 1})">&raquo;</a>`;
   } else {
-    // Desabilitar botão próximo se for a última página
-    const botaoProximo = document.createElement("li");
-    botaoProximo.classList.add("page-item", "disabled");
+    botaoProximo.classList.add("disabled");
     botaoProximo.innerHTML = `<span class="page-link">&raquo;</span>`;
-    paginacaoContainer.appendChild(botaoProximo);
   }
+  paginacaoContainer.appendChild(botaoProximo);
 }
 
 function editarEntrada(id) {
