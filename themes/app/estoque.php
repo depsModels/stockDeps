@@ -25,8 +25,8 @@ $this->layout("_theme");
                     <button class="btn btn-info" id="consultarEntradasBtn">Consultar Entradas</button>
                     <button class="btn btn-info" id="consultarSaidasBtn">Consultar Saídas</button>
                     <div>
-                        <label for="buscarProduto" class="px-2">Procurar produto: </label>
-                        <input type="text" name="buscarProduto" id="buscarProduto" placeholder="Procurar produto">
+                        <label for="buscarProduto" class="px-2">Procurar produto:</label>
+                        <input type="text" name="buscarProduto" class="inputsBusca" id="buscarProduto" placeholder="Procurar produto">
                     </div>
                     <div>
                         <label for="categoria" class="px-2">Filtrar por categoria: </label>
@@ -446,10 +446,17 @@ $this->layout("_theme");
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <label for="filtroDataEntrada">
-                        <h5>Filtre pelo dia da entrada:</h5>
-                    </label>
-                    <input type="date" id="filtroDataEntrada" onchange="filtrarEntradasPorData()" />
+                    <div class="d-flex justify-content-center ">
+                        <div class="d-flex align-items-center">
+                            <label for="filtroDataEntrada">Filtrar pelo dia da entrada:  </label>
+                            <input type="date" id="filtroDataEntrada" class="inputsBusca" onchange="filtrarEntradasPorData()" />
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <label for="buscarEntrada" class="px-2">Procurar entrada: </label>
+                            <input type="text" name="buscarEntrada" class="inputsBusca" id="buscarEntrada" placeholder="Ex: produto...">
+                        </div>
+                    </div>
+
                     <table class="table table-striped" id="tabelaEntradas">
                         <thead>
                             <tr>
@@ -521,10 +528,17 @@ $this->layout("_theme");
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <label for="filtroDataSaida">
-                        <h5>Filtre pelo dia da saída:</h5>
-                    </label>
-                    <input type="date" id="filtroDataSaida"  onchange="filtrarSaidasPorData()" />
+                    <div class="d-flex justify-content-center ">
+                        <div class="d-flex align-items-center">
+                            <label for="filtroDataSaida">Filtrar pelo dia da saída:  </label>
+                            <input type="date" id="filtroDataSaida" class="inputsBusca" onchange="filtrarSaidasPorData()" />
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <label for="buscarSaida" class="px-2">Procurar saída: </label>
+                            <input type="text" name="buscarSaida" class="inputsBusca" id="buscarSaida" placeholder="Ex: produto...">
+                        </div>
+                    </div>
+
                     <table class="table table-striped" id="tabelaSaidas">
                         <thead>
                             <tr>
@@ -560,7 +574,7 @@ $this->layout("_theme");
                 <div class="modal-body">
                     <form id="saida-editar" method="post">
                         <!-- Nome do Produto (Somente leitura) -->
-                            <input type="hidden" name="idEditarSaida" id="idEditarSaida">
+                        <input type="hidden" name="idEditarSaida" id="idEditarSaida">
                         <div class="mb-3">
                             <label for="saidaProduto" class="form-label">Produto</label>
                             <input type="text" class="form-control" id="saidaProduto" readonly> <!-- readonly torna o campo não editável -->
