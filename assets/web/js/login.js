@@ -1,4 +1,4 @@
-const BASE_URL = '/stockDeps';
+const BASE_URL = '';
 
 // Valida login
 const form_login = $("#form-login");
