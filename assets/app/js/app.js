@@ -27,7 +27,6 @@ async function fetchProdutos() {
   buscarProduto(); // Inicializa o evento de busca 
   mostrarPagina(paginaAtual); // Mostra a primeira página
 }
-
 async function fetchCategorias() {
   const response = await fetch(`${BASE_URL}/getCategorias`);
   categorias = await response.json();
@@ -45,7 +44,6 @@ async function fetchFornecedores() {
   fornecedores = await response.json();
   preencherFornecedores(fornecedores);
 }
-
 async function fetchEntradas() {
   const response = await fetch(`${BASE_URL}/getEntradas`);
   entradas = await response.json();
@@ -80,8 +78,6 @@ function formatarData(dataISO) {
     day: "2-digit",
   });
 }
-
-
 
 function renderizarTabela() {
   const tbody = document.getElementById("corpoTabelaCategorias");
@@ -172,7 +168,7 @@ function buscarSaida() {
 function mostrarPaginaEntradas(pagina) {
   const inicio = (pagina - 1) * itensPorPagina;
   const fim = inicio + itensPorPagina;
-
+entradasFiltradas.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   // Paginar os resultados corretamente
   const entradasPagina = entradasFiltradas.slice(inicio, fim);
 
@@ -190,6 +186,8 @@ function mostrarPaginaEntradas(pagina) {
   entradasPagina.forEach((entrada) => {
     const produto = produtosOriginais.find((p) => p.id == entrada.idProdutos);
     const fornecedor = fornecedores.find((f) => f.id == entrada.idFornecedor);
+
+    
 
     const row = `
             <tr>
