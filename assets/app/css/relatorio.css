@@ -1,0 +1,137 @@
+.container-relatorios {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.titulo-relatorios {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: #2c3e50;
+    font-size: 2.5rem;
+    font-weight: 600;
+}
+
+.card-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    padding: 1rem;
+}
+
+.card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: none;
+    overflow: hidden;
+    height: 100%;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+.card-body {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+}
+
+.card-title {
+    color: #2c3e50;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    position: relative;
+    padding-bottom: 1rem;
+}
+
+.card-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50px;
+    height: 3px;
+    background: #3498db;
+    border-radius: 2px;
+}
+
+.card-text {
+    color: #666;
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+    flex-grow: 1;
+}
+
+.btn-relatorio {
+    background: #3498db;
+    color: white;
+    padding: 0.8rem 2rem;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: background 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-relatorio:hover {
+    background: #2980b9;
+    color: white;
+}
+
+.btn-relatorio i {
+    font-size: 1.2rem;
+}
+
+/* Ícones específicos para cada tipo de relatório */
+.card[data-tipo="clientes"] .card-title::before {
+    content: '\f007';
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    margin-right: 0.5rem;
+    color: #3498db;
+}
+
+.card[data-tipo="fornecedores"] .card-title::before {
+    content: '\f0d1';
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    margin-right: 0.5rem;
+    color: #3498db;
+}
+
+.card[data-tipo="produtos"] .card-title::before {
+    content: '\f466';
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    margin-right: 0.5rem;
+    color: #3498db;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .container-relatorios {
+        padding: 1rem;
+    }
+    
+    .titulo-relatorios {
+        font-size: 2rem;
+    }
+    
+    .card-group {
+        grid-template-columns: 1fr;
+    }
+}
