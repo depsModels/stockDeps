@@ -6,10 +6,11 @@
 
 .headerTabelaProdutos {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  gap: 1rem;
-  padding: 1.5rem;
+  gap: 0.5rem;
+  padding: 1rem;
   border-radius: 5px;
 }
 
@@ -17,9 +18,9 @@
   background-color: #007bff;
   color: #fff;
   border: none;
-  padding: 0.5rem 1rem;
+  padding: 0.375rem 0.75rem;
   border-radius: 5px;
-  font-size: 1rem;
+  font-size: 0.875rem;
   cursor: pointer;
   transition: background-color 0.3s, transform 0.2s;
 }
@@ -40,10 +41,10 @@
 
 .inputsBusca,
 .headerTabelaProdutos select {
-  height: 100%;
-  padding: 0.5rem;
+  height: 32px;
+  padding: 0.375rem 0.75rem;
   margin: 0 .5rem;
-  font-size: 1rem;
+  font-size: 0.875rem;
   border: 1px solid #ced4da;
   border-radius: 5px;
 }
@@ -56,13 +57,114 @@
   width: 100%;
   border-collapse: collapse;
   margin-top: 1rem;
+  font-size: 0.875rem;
+  table-layout: fixed;
 }
 
 .table th,
 .table td {
   text-align: center;
   vertical-align: middle;
-  padding: 12px 15px;
+  padding: 4px 4px;
+  height: 35px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Larguras específicas para cada coluna */
+.table th:nth-child(1), 
+.table td:nth-child(1) { /* Código */
+  width: 8%;
+}
+
+.table th:nth-child(2), 
+.table td:nth-child(2) { /* Nome */
+  width: 15%;
+}
+
+.table th:nth-child(3), 
+.table td:nth-child(3) { /* Descrição */
+  width: 25%;
+}
+
+.table th:nth-child(4), 
+.table td:nth-child(4) { /* Preço */
+  width: 10%;
+}
+
+.table th:nth-child(5), 
+.table td:nth-child(5) { /* Quantidade */
+  width: 7%;
+}
+
+.table th:nth-child(6), 
+.table td:nth-child(6) { /* Unidade */
+  width: 7%;
+}
+
+.table th:nth-child(7), 
+.table td:nth-child(7) { /* Status */
+  width: 8%;
+}
+
+.table th:nth-child(8), 
+.table td:nth-child(8) { /* Ações */
+  width: 20%;
+  padding: 2px;
+}
+
+.table td.description-cell {
+  white-space: normal;
+  line-height: 1.2;
+  height: 35px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  padding: 2px 4px;
+}
+
+.table .btn {
+  padding: 4px 8px;
+  font-size: 0.875rem;
+  margin: 0;
+  min-width: 30px;
+  height: 30px;
+  line-height: 1;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.table .btn i {
+  font-size: 1rem;
+}
+
+.table td .btn-group {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+/* Cores dos ícones no hover */
+.table .btn-primary:hover i {
+  color: #fff;
+}
+
+.table .btn-danger:hover i {
+  color: #fff;
+}
+
+.table .btn-success:hover i {
+  color: #fff;
+}
+
+.table .btn-warning:hover i {
+  color: #000;
 }
 
 #ordenarCodigo,
@@ -79,14 +181,20 @@
   cursor: default;
 }
 
-.table td {
-  padding: 12px 15px;
+.seta {
+  cursor: pointer;
+  margin-left: 5px;
+  font-size: 14px;
+  color: gray;
 }
 
-.table td .btn-group {
-  display: flex;
-  justify-content: space-evenly;
-  gap: 10px;
+th:hover .seta {
+  color: black;
+}
+
+#btn-edit,
+#btn-delete {
+  width: 90%;
 }
 
 button {
@@ -112,20 +220,4 @@ button:active {
   display: flex;
   justify-content: space-evenly;
   gap: 10px;
-}
-
-.seta {
-  cursor: pointer;
-  margin-left: 5px;
-  font-size: 14px;
-  color: gray;
-}
-
-th:hover .seta {
-  color: black;
-}
-
-#btn-edit,
-#btn-delete {
-  width: 90%;
 }

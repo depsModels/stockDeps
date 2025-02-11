@@ -1,5 +1,26 @@
+// Sistema de cache para melhorar performance
+const cache = {
+    produtos: new Map(),
+    categorias: new Map(),
+    clientes: new Map(),
+    fornecedores: new Map()
+};
+
+// Função de debounce para otimizar eventos de input
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
 const BASE_URL = '/stockDeps/app';
-const itensPorPagina = 8;
+const itensPorPagina = 15; // Alterado para 15 itens por página
 const maxBotoesPaginacao = 5; // Limite de botões de página exibidos
 
 let produtos = [];
@@ -21,12 +42,14 @@ let produtosOrdenados = [];
 
 async function fetchProdutos() {
   const response = await fetch(`${BASE_URL}/getProdutos`);
-  produtosOriginais = await response.json(); // Salva os produtos originais
-  produtosFiltrados = [...produtosOriginais]; // Inicializa os filtrados com todos os produtos
-  produtosOrdenados = [...produtosFiltrados]; // Inicializa os ordenados com os produtos filtrados
-  buscarProduto(); // Inicializa o evento de busca 
-  mostrarPagina(paginaAtual); // Mostra a primeira página
+  produtos = await response.json();
+  produtos.forEach(produto => cache.produtos.set(produto.id, produto));
+  produtosFiltrados = [...produtos];
+  produtosOrdenados = [...produtos];
+  buscarProduto();
+  mostrarPagina(paginaAtual);
 }
+
 async function fetchCategorias() {
   const response = await fetch(`${BASE_URL}/getCategorias`);
   categorias = await response.json();
@@ -101,21 +124,23 @@ function renderizarTabela() {
 
 
 function buscarProduto() {
-  const inputBuscarProduto = document.getElementById("buscarProduto");
-  inputBuscarProduto.addEventListener("input", function () {
-    const termoBusca = inputBuscarProduto.value.toLowerCase();
+    const inputBuscarProduto = document.getElementById("buscarProduto");
+    const buscarProdutoDebounced = debounce(function() {
+        const termoBusca = inputBuscarProduto.value.toLowerCase();
+        
+        produtosFiltrados = produtos.filter(produto => {
+            if (!produto._searchString) {
+                produto._searchString = (produto.nome + ' ' + produto.codigo_produto).toLowerCase();
+            }
+            return produto._searchString.includes(termoBusca);
+        });
 
-    produtosFiltrados = produtosOriginais.filter(
-      (produto) =>
-        produto.nome.toLowerCase().includes(termoBusca) ||
-        produto.codigo_produto.toLowerCase().includes(termoBusca)
-    );
+        produtosOrdenados = [...produtosFiltrados];
+        paginaAtual = 1;
+        mostrarPagina(paginaAtual);
+    }, 300); // 300ms de delay
 
-    // Reiniciar a ordenação com os produtos filtrados
-    produtosOrdenados = [...produtosFiltrados];
-    paginaAtual = 1; // Reinicia na primeira página
-    mostrarPagina(paginaAtual); // Atualiza a tabela
-  });
+    inputBuscarProduto.addEventListener("input", buscarProdutoDebounced);
 }
 
 function removerAcentos(str) {
@@ -128,7 +153,7 @@ function buscarEntrada() {
     const termoBusca = removerAcentos(inputBuscarEntrada.value.toLowerCase());
 
     entradasFiltradas = entradas.filter((entrada) => {
-      const produto = produtosOriginais.find((p) => p.id == entrada.idProdutos);
+      const produto = produtos.find((p) => p.id == entrada.idProdutos);
       const fornecedor = fornecedores.find((f) => f.id == entrada.idFornecedor);
       
       return (
@@ -148,7 +173,7 @@ function buscarSaida() {
     const termoBusca = removerAcentos(inputBuscarSaida.value.toLowerCase());
 
     saidasFiltradas = saidas.filter((saida) => {
-      const produto = produtosOriginais.find((p) => p.id == saida.idProdutos);
+      const produto = produtos.find((p) => p.id == saida.idProdutos);
       const cliente = Array.isArray(clientes)
         ? clientes.find((c) => c.id == saida.idClientes)?.nome || "Cliente não encontrado"
         : "Cliente não cadastrado";
@@ -184,7 +209,7 @@ entradasFiltradas.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)
 
   // Preencher a tabela com as entradas paginadas
   entradasPagina.forEach((entrada) => {
-    const produto = produtosOriginais.find((p) => p.id == entrada.idProdutos);
+    const produto = produtos.find((p) => p.id == entrada.idProdutos);
     const fornecedor = fornecedores.find((f) => f.id == entrada.idFornecedor);
 
     
@@ -230,7 +255,7 @@ function mostrarPaginaSaidas(pagina) {
 
   // Preencher a tabela com as saídas paginadas
   saidasPagina.forEach((saida) => {
-    const produto = produtosOriginais.find((p) => p.id == saida.idProdutos);
+    const produto = produtos.find((p) => p.id == saida.idProdutos);
     const cliente = Array.isArray(clientes)
     ? clientes.find((c) => c.id == saida.idClientes)?.nome ||
       "Cliente não encontrado"
@@ -318,52 +343,99 @@ function mostrarMensagemNenhumaSaida() {
   tabela.innerHTML = `<tr><td colspan="6" class="text-center">Nenhuma saída encontrada para a data selecionada.</td></tr>`;
 }
 
-function configurarPaginacao(
-  totalItens,
-  callback,
-  seletorPaginacao,
-  paginaAtual
-) {
-  const totalPaginas = Math.ceil(totalItens / itensPorPagina);
-  const paginacaoContainer = document.querySelector(seletorPaginacao);
-  paginacaoContainer.innerHTML = ""; // Limpa a navegação
+function configurarPaginacao(totalItens) {
+    const paginationElement = document.getElementById("pagination");
+    if (!paginationElement) return;
 
-  if (totalPaginas <= 1) return; // Se há apenas uma página, não exibe paginação
+    paginationElement.innerHTML = "";
 
-  const paginaInicial = Math.max(1, paginaAtual - Math.floor(maxBotoesPaginacao / 2));
-  const paginaFinal = Math.min(totalPaginas, paginaInicial + maxBotoesPaginacao - 1);
+    // Botão Anterior
+    const prevLi = document.createElement("li");
+    prevLi.className = "page-item";
+    const prevLink = document.createElement("a");
+    prevLink.className = "page-link";
+    prevLink.href = "#";
+    prevLink.textContent = "Anterior";
+    prevLink.onclick = () => {
+        if (paginaAtual > 1) {
+            mostrarPagina(paginaAtual - 1);
+        }
+        return false;
+    };
+    prevLi.appendChild(prevLink);
+    paginationElement.appendChild(prevLi);
 
-  // Botão "Anterior"
-  const botaoAnterior = document.createElement("li");
-  botaoAnterior.classList.add("page-item");
-  if (paginaAtual > 1) {
-    botaoAnterior.innerHTML = `<a class="page-link" href="#" onclick="${callback.name}(${paginaAtual - 1})">&laquo;</a>`;
-  } else {
-    botaoAnterior.classList.add("disabled");
-    botaoAnterior.innerHTML = `<span class="page-link">&laquo;</span>`;
-  }
-  paginacaoContainer.appendChild(botaoAnterior);
+    // Páginas numeradas
+    for (let i = 1; i <= Math.ceil(totalItens / itensPorPagina); i++) {
+        const li = document.createElement("li");
+        li.className = `page-item ${i === paginaAtual ? "active" : ""}`;
+        const link = document.createElement("a");
+        link.className = "page-link";
+        link.href = "#";
+        link.textContent = i;
+        link.onclick = () => {
+            mostrarPagina(i);
+            return false;
+        };
+        li.appendChild(link);
+        paginationElement.appendChild(li);
+    }
 
-  // Botões de páginas
-  for (let i = paginaInicial; i <= paginaFinal; i++) {
-    const botaoPagina = document.createElement("li");
-    botaoPagina.classList.add("page-item");
-    if (i === paginaAtual) botaoPagina.classList.add("active");
+    // Botão Próximo
+    const nextLi = document.createElement("li");
+    nextLi.className = "page-item";
+    const nextLink = document.createElement("a");
+    nextLink.className = "page-link";
+    nextLink.href = "#";
+    nextLink.textContent = "Próximo";
+    nextLink.onclick = () => {
+        if (paginaAtual < Math.ceil(totalItens / itensPorPagina)) {
+            mostrarPagina(paginaAtual + 1);
+        }
+        return false;
+    };
+    nextLi.appendChild(nextLink);
+    paginationElement.appendChild(nextLi);
+}
 
-    botaoPagina.innerHTML = `<a class="page-link" href="#" onclick="${callback.name}(${i})">${i}</a>`;
-    paginacaoContainer.appendChild(botaoPagina);
-  }
+function openModal(tipo, produto) {
+    if (tipo === "editar") {
+        const modalEditar = document.getElementById("modalEditar");
+        if (!modalEditar) return;
 
-  // Botão "Próximo"
-  const botaoProximo = document.createElement("li");
-  botaoProximo.classList.add("page-item");
-  if (paginaAtual < totalPaginas) {
-    botaoProximo.innerHTML = `<a class="page-link" href="#" onclick="${callback.name}(${paginaAtual + 1})">&raquo;</a>`;
-  } else {
-    botaoProximo.classList.add("disabled");
-    botaoProximo.innerHTML = `<span class="page-link">&raquo;</span>`;
-  }
-  paginacaoContainer.appendChild(botaoProximo);
+        // Preencher os campos do modal de edição
+        document.getElementById("idProdutoUpdate").value = produto.id;
+        document.getElementById("codigoProdutoEditar").value = produto.codigo_produto;
+        document.getElementById("nomeProduto").value = produto.nome;
+        document.getElementById("descricaoProduto").value = produto.descricao;
+        document.getElementById("precoProduto").value = produto.preco.toLocaleString("pt-BR", {
+            style: "currency",
+            currency: "BRL"
+        });
+        document.getElementById("unidadeProdutoEditar").value = produto.unidade_medida;
+        
+        // Preencher o select de categorias
+        const categoriaSelect = document.getElementById("categoriaProdutoEditar");
+        categoriaSelect.innerHTML = "";
+        categorias.forEach(categoria => {
+            const option = document.createElement("option");
+            option.value = categoria.id;
+            option.textContent = categoria.nome;
+            categoriaSelect.appendChild(option);
+        });
+        document.getElementById("categoriaProdutoEditar").value = produto.idCategoria;
+
+        // Abrir o modal
+        const bsModalEditar = new bootstrap.Modal(modalEditar);
+        bsModalEditar.show();
+    } else if (tipo === "excluir") {
+        const modalExcluir = document.getElementById("modalExcluir");
+        if (!modalExcluir) return;
+
+        document.getElementById("idProdutoExcluir").value = produto.id;
+        const bsModalExcluir = new bootstrap.Modal(modalExcluir);
+        bsModalExcluir.show();
+    }
 }
 
 function editarEntrada(id) {
@@ -371,7 +443,7 @@ function editarEntrada(id) {
 
   if (entrada) {
     // Obter o nome do produto com base no id do produto
-    const produto = produtosOriginais.find((p) => p.id === entrada.idProdutos);
+    const produto = produtos.find((p) => p.id === entrada.idProdutos);
     const nomeProduto = produto ? produto.nome : "Produto não encontrado";
 
     // Preencher os campos do modal
@@ -422,7 +494,7 @@ function excluirEntrada(entradaId) {
 
 function editarSaida(id) {
   const saida = saidas.find((s) => s.id === id); // Encontre a saída pelo ID
-  const produto = produtosOriginais.find((p) => p.id === saida.idProdutos); // Encontre o produto correspondente à saída
+  const produto = produtos.find((p) => p.id === saida.idProdutos); // Encontre o produto correspondente à saída
 
   if (saida) {
     // Preencher os campos no modal
@@ -503,131 +575,83 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function preencherTabelaProdutos(produtosPaginados) {
-  const corpoTabela = document.getElementById("corpoTabela");
-  corpoTabela.innerHTML = ""; // Limpa a tabela
+    const corpoTabela = document.getElementById("corpoTabela");
+    corpoTabela.innerHTML = ""; // Limpa a tabela
 
-  if (!produtosPaginados || produtosPaginados.length === 0) {
-    return; // Se não há produtos, apenas limpa a tabela
-  }
+    if (!produtosPaginados || produtosPaginados.length === 0) {
+        return; // Se não há produtos, apenas limpa a tabela
+    }
 
-  produtosPaginados.forEach((produto) => {
-    const tr = document.createElement("tr");
-    const {
-      codigo_produto,
-      nome,
-      descricao,
-      preco,
-      quantidade,
-      unidade_medida,
-    } = produto;
+    produtosPaginados.forEach((produto) => {
+        const tr = document.createElement("tr");
+        
+        // Código do produto
+        const tdCodigo = document.createElement("td");
+        tdCodigo.textContent = produto.codigo_produto;
+        tr.appendChild(tdCodigo);
+        
+        // Nome
+        const tdNome = document.createElement("td");
+        tdNome.textContent = produto.nome;
+        tr.appendChild(tdNome);
+        
+        // Descrição
+        const tdDescricao = document.createElement("td");
+        tdDescricao.className = "description-cell";
+        tdDescricao.textContent = produto.descricao;
+        tr.appendChild(tdDescricao);
+        
+        // Preço
+        const tdPreco = document.createElement("td");
+        tdPreco.textContent = produto.preco.toLocaleString("pt-BR", {
+            style: "currency",
+            currency: "BRL",
+        });
+        tr.appendChild(tdPreco);
+        
+        // Quantidade
+        const tdQuantidade = document.createElement("td");
+        tdQuantidade.textContent = produto.quantidade;
+        tr.appendChild(tdQuantidade);
+        
+        // Unidade de medida
+        const tdUnidade = document.createElement("td");
+        tdUnidade.textContent = produto.unidade_medida;
+        tr.appendChild(tdUnidade);
+        
+        // Status
+        const tdStatus = document.createElement("td");
+        tdStatus.textContent = produto.quantidade > 0 ? "Disponível" : "Indisponível";
+        tr.appendChild(tdStatus);
 
-    const precoFormatado = preco.toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL",
+        // Botões de ação
+        tr.appendChild(createButtonGroup(produto));
+        
+        corpoTabela.appendChild(tr);
     });
-
-    const status = quantidade > 0 ? "Disponível" : "Indisponível";
-    const dados = [
-      codigo_produto,
-      nome,
-      descricao,
-      precoFormatado,
-      quantidade,
-      unidade_medida,
-      status,
-    ];
-
-    dados.forEach((dado) => {
-      const td = document.createElement("td");
-      td.textContent = dado;
-      tr.appendChild(td);
-    });
-
-    tr.appendChild(createButtonGroup(produto)); // Adiciona os botões de ação
-    corpoTabela.appendChild(tr);
-  });
 }
 
 function mostrarPagina(pagina) {
-  paginaAtual = pagina;
-
-  const inicio = (pagina - 1) * itensPorPagina;
-  const fim = inicio + itensPorPagina;
-
-  const produtosNaPagina = produtosOrdenados.slice(inicio, fim); // Paginar com a lista ordenada
-  preencherTabelaProdutos(produtosNaPagina);
-
-  atualizarPaginacao(produtosOrdenados.length, paginaAtual); // Atualiza paginação com a lista ordenada
+    const inicio = (pagina - 1) * itensPorPagina;
+    const fim = inicio + itensPorPagina;
+    const produtosPagina = produtosOrdenados.slice(inicio, fim);
+    
+    preencherTabelaProdutos(produtosPagina);
+    
+    // Configurar paginação
+    configurarPaginacao(produtosOrdenados.length);
 }
-
-function atualizarPaginacao(totalProdutos, paginaAtual) {
-  const totalPaginas = Math.ceil(totalProdutos / itensPorPagina);
-  const pagination = document.getElementById("pagination");
-  pagination.innerHTML = ""; // Limpa o container de paginação
-
-  const paginaInicial = Math.max(
-    1,
-    paginaAtual - Math.floor(maxBotoesPaginacao / 2)
-  );
-  const paginaFinal = Math.min(
-    totalPaginas,
-    paginaInicial + maxBotoesPaginacao - 1
-  );
-
-  // Botão "Anterior"
-  if (paginaAtual > 1) {
-    const liPrev = document.createElement("li");
-    liPrev.classList.add("page-item");
-    const aPrev = document.createElement("a");
-    aPrev.classList.add("page-link");
-    aPrev.textContent = "Anterior";
-    aPrev.onclick = () => mostrarPagina(paginaAtual - 1, produtos);
-    liPrev.appendChild(aPrev);
-    pagination.appendChild(liPrev);
-  }
-
-  // Botões das páginas
-  for (let i = paginaInicial; i <= paginaFinal; i++) {
-    const li = document.createElement("li");
-    li.classList.add("page-item");
-    if (i === paginaAtual) {
-      li.classList.add("active"); // Adiciona a classe ativa na página atual
-    }
-
-    const a = document.createElement("a");
-    a.classList.add("page-link");
-    a.textContent = i;
-    a.onclick = () => {
-      mostrarPagina(i, produtos); // Navega para a página correspondente
-    };
-    li.appendChild(a);
-    pagination.appendChild(li);
-  }
-
-  // Botão "Próximo"
-  if (paginaAtual < totalPaginas) {
-    const liNext = document.createElement("li");
-    liNext.classList.add("page-item");
-    const aNext = document.createElement("a");
-    aNext.classList.add("page-link");
-    aNext.textContent = "Próximo";
-    aNext.onclick = () => mostrarPagina(paginaAtual + 1, produtos);
-    liNext.appendChild(aNext);
-    pagination.appendChild(liNext);
-  }
-}
-
 
 function alterarTabelaPorCategoriaSelecionada() {
   const categoriaSelecionada = document.getElementById("categoria").value;
   const categoriaSelecionadaNumero = Number(categoriaSelecionada);
 
   if (categoriaSelecionada && !isNaN(categoriaSelecionadaNumero)) {
-    produtosFiltrados = produtosOriginais.filter(
+    produtosFiltrados = produtos.filter(
       (produto) => Number(produto.idCategoria) === categoriaSelecionadaNumero
     );
   } else {
-    produtosFiltrados = [...produtosOriginais]; // Reseta para todos os produtos
+    produtosFiltrados = [...produtos]; // Reseta para todos os produtos
   }
 
   // Reiniciar a ordenação com os produtos filtrados
@@ -844,123 +868,48 @@ document
   });
 
 function createButtonGroup(produto) {
-  const actions = [
-    {
-      text: "Editar",
-      class: "btn-primary",
-      action: () => openModal("Editar", produto, produto.id, categorias),
-    },
-    {
-      text: "Excluir",
-      class: "btn-danger",
-      action: () => openModal("Excluir", produto.id),
-    },
-    {
-      text: "Adicionar Entrada",
-      class: "btn-success",
-      action: () => openModalEntrada(produto.id),
-    },
-    {
-      text: "Adicionar Saída",
-      class: "btn-warning",
-      action: () => openModalSaida(produto.id, produto.preco),
-    },
-  ];
+    const td = document.createElement("td");
+    td.className = "text-center";
 
-  const btnGroup = document.createElement("div");
-  btnGroup.classList.add("btn-group", "w-100");
-  actions.forEach(({ text, class: btnClass, action }) => {
-    const btn = document.createElement("button");
-    btn.classList.add("btn", btnClass);
-    btn.textContent = text;
-    btn.onclick = action;
-    btnGroup.appendChild(btn);
-  });
+    const btnGroup = document.createElement("div");
+    btnGroup.className = "btn-group";
 
-  const tdAcoes = document.createElement("td");
-  tdAcoes.colSpan = 2;
-  tdAcoes.appendChild(btnGroup);
-  return tdAcoes;
-}
+    // Botão Editar
+    const btnEditar = document.createElement("button");
+    btnEditar.className = "btn btn-primary btn-sm";
+    btnEditar.innerHTML = '<i class="fas fa-edit"></i>';
+    btnEditar.title = "Editar";
+    btnEditar.onclick = () => openModal("editar", produto);
 
-function openModal(tipo, produto) {
-  const modalId = tipo === "Editar" ? "modalEditar" : "modalExcluir";
+    // Botão Excluir
+    const btnExcluir = document.createElement("button");
+    btnExcluir.className = "btn btn-danger btn-sm";
+    btnExcluir.innerHTML = '<i class="fas fa-trash-alt"></i>';
+    btnExcluir.title = "Excluir";
+    btnExcluir.onclick = () => openModal("excluir", produto);
 
-  if (tipo === "Editar") {
-    document.getElementById("idProdutoUpdate").value = produto.id;
-    document.getElementById("codigoProdutoEditar").value =
-      produto.codigo_produto;
-    document.getElementById("nomeProduto").value = produto.nome;
-    document.getElementById("descricaoProduto").value = produto.descricao;
-    document.getElementById("fotoProduto").value = ""; // Limpa o campo (opcional)
-    document.getElementById("previewImagem").src = produto.imagem; // Define o src da imagem
-    document.getElementById("previewImagem").style.display = "block"; // Mostra a imagem
-    // Configurar unidade de medida
-    const unidadeSelect = document.getElementById("unidadeProdutoEditar");
-    const unidadeMedida = produto.unidade_medida;
+    // Botão Entrada
+    const btnEntrada = document.createElement("button");
+    btnEntrada.className = "btn btn-success btn-sm";
+    btnEntrada.innerHTML = '<i class="fas fa-plus-circle"></i>';
+    btnEntrada.title = "Adicionar Entrada";
+    btnEntrada.onclick = () => openModalEntrada(produto.id);
 
-    // Verificar se a unidade já existe no select
-    const optionExiste = Array.from(unidadeSelect.options).some(
-      (option) => option.value === unidadeMedida
-    );
+    // Botão Saída
+    const btnSaida = document.createElement("button");
+    btnSaida.className = "btn btn-warning btn-sm";
+    btnSaida.innerHTML = '<i class="fas fa-minus-circle"></i>';
+    btnSaida.title = "Adicionar Saída";
+    btnSaida.onclick = () => openModalSaida(produto.id, produto.preco);
 
-    // Adicionar a unidade ao select, se não existir
-    if (!optionExiste) {
-      const novaOption = document.createElement("option");
-      novaOption.value = unidadeMedida;
-      novaOption.textContent = unidadeMedida;
-      unidadeSelect.appendChild(novaOption);
-    }
+    // Adiciona os botões ao grupo
+    btnGroup.appendChild(btnEditar);
+    btnGroup.appendChild(btnExcluir);
+    btnGroup.appendChild(btnEntrada);
+    btnGroup.appendChild(btnSaida);
 
-    // Selecionar a unidade do produto
-    unidadeSelect.value = unidadeMedida;
-
-
-    const precoProduto = document.getElementById("precoProduto");
-
-    // Garante que `produto.preco` seja um número válido antes de formatar
-    let preco = produto.preco ? parseFloat(produto.preco) : 0;
-
-    // Define o valor formatado no campo de entrada
-    precoProduto.value = preco.toLocaleString("pt-BR", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    });
-
-
-    // Configurar categorias no select
-    const categoria = categorias.find(
-      (categoria) => categoria.id === produto.idCategoria
-    );
-    const categoriaSelect = document.getElementById("categoriaProdutoEditar");
-    categoriaSelect.innerHTML = ""; // Limpar opções anteriores
-
-    // Adicionar uma opção padrão "Selecione uma categoria"
-    const defaultOption = document.createElement("option");
-    defaultOption.value = "";
-    defaultOption.textContent = "Selecione uma categoria";
-    categoriaSelect.appendChild(defaultOption);
-
-    // Preencher as opções com as categorias disponíveis
-    categorias.forEach((categoria) => {
-      const option = document.createElement("option");
-      option.value = categoria.id;
-      option.textContent = categoria.nome;
-      categoriaSelect.appendChild(option);
-    });
-
-    // Selecionar a categoria correspondente ao produto
-    if (categoria) {
-      categoriaSelect.value = categoria.id;
-    }
-  }
-
-  if (tipo === "Excluir") {
-    document.getElementById("idProdutoExcluir").value = produto;
-  }
-
-  // Exibir o modal correspondente
-  new bootstrap.Modal(document.getElementById(modalId)).show();
+    td.appendChild(btnGroup);
+    return td;
 }
 
 function openModalEntrada(id) {
@@ -969,14 +918,6 @@ function openModalEntrada(id) {
   inputProdutoId.value = id;
   new bootstrap.Modal(document.getElementById("modalEntrada")).show();
 }
-
-document
-  .getElementById("saida-cadastro")
-  .addEventListener("submit", function (event) {
-    const inputPrecoSaida = document.getElementById("precoSaida");
-
-    inputPrecoSaida.value = preco;
-  });
 
 function openModalSaida(id, preco) {
   const inputProdutoId = document.getElementById("produtoId2");
@@ -1005,46 +946,50 @@ let ordemAtual = {
 };
 
 function ordenarTabela(coluna, idSeta) {
-  if (ordemAtual.coluna === coluna) {
-    ordemAtual.crescente = !ordemAtual.crescente;
-  } else {
-    ordemAtual.coluna = coluna;
-    ordemAtual.crescente = true;
-  }
-
-  // Atualizar setas
-  document
-    .querySelectorAll(".seta")
-    .forEach((seta) => (seta.textContent = "⬍"));
-  const setaAtual = document.getElementById(idSeta);
-  setaAtual.textContent = ordemAtual.crescente ? "⬆" : "⬇";
-
-  // Ordenar produtos filtrados
-  produtosOrdenados = [...produtosFiltrados].sort((a, b) => {
-    let valorA = a[coluna];
-    let valorB = b[coluna];
-
-    // Se for uma string, converter para minúscula para comparar corretamente
-    if (typeof valorA === "string") {
-      valorA = valorA.toLowerCase();
-      valorB = valorB.toLowerCase();
-    }
-
-    // Converter para número se for numérico
-    if (!isNaN(valorA) && !isNaN(valorB)) {
-      valorA = Number(valorA);
-      valorB = Number(valorB);
-    }
-
-    // Comparar de acordo com a ordem crescente ou decrescente
-    if (ordemAtual.crescente) {
-      return valorA > valorB ? 1 : valorA < valorB ? -1 : 0;
+    if (ordemAtual.coluna === coluna) {
+        ordemAtual.crescente = !ordemAtual.crescente;
     } else {
-      return valorA < valorB ? 1 : valorA > valorB ? -1 : 0;
+        ordemAtual.coluna = coluna;
+        ordemAtual.crescente = true;
     }
-  });
 
-  mostrarPagina(1); // Atualiza a tabela começando na primeira página
+    const direcao = ordemAtual.crescente ? 1 : -1;
+    
+    // Memoização da função de ordenação
+    const chaveOrdenacao = `${coluna}_${direcao}`;
+    if (!produtosOrdenados._ordenacaoCache) {
+        produtosOrdenados._ordenacaoCache = new Map();
+    }
+    
+    if (!produtosOrdenados._ordenacaoCache.has(chaveOrdenacao)) {
+        produtosOrdenados.sort((a, b) => {
+            let valorA = a[coluna];
+            let valorB = b[coluna];
+            
+            if (typeof valorA === 'string') {
+                valorA = valorA.toLowerCase();
+                valorB = valorB.toLowerCase();
+            }
+            
+            return valorA > valorB ? direcao : valorA < valorB ? -direcao : 0;
+        });
+        
+        produtosOrdenados._ordenacaoCache.set(chaveOrdenacao, [...produtosOrdenados]);
+    } else {
+        produtosOrdenados = [...produtosOrdenados._ordenacaoCache.get(chaveOrdenacao)];
+    }
+
+    // Atualizar setas de ordenação
+    document.querySelectorAll(".seta-ordenacao").forEach((seta) => {
+        seta.textContent = "↕";
+    });
+    
+    const setaAtual = document.getElementById(idSeta);
+    if (setaAtual) {
+        setaAtual.textContent = ordemAtual.crescente ? "↑" : "↓";
+    }
+
+    mostrarPagina(paginaAtual);
 }
 
 document
@@ -1063,12 +1008,6 @@ document
   .addEventListener("click", () =>
     ordenarTabela("quantidade", "setaQuantidade")
   );
-
-
-
-
-
-
 
 document
   .getElementById("categoria-cadastro")
