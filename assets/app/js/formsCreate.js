@@ -96,12 +96,32 @@ form_ec.on("submit", function (e) {
                 return;
             }
             if (response.type === 'success') {
-                exibirMensagemTemporariaSucesso(response.message);
+                // Fechar o modal de cadastro
+                const modalCadastro = bootstrap.Modal.getInstance(document.getElementById('modalCadastrarEntrada'));
+                if (modalCadastro) {
+                    modalCadastro.hide();
+                }
+                
                 // Limpa os campos do formulário
                 limparCamposFormulario("#entrada-cadastro");
-                // Recarrega entradas e produtos
-                fetchEntradas();
-                fetchProdutos();
+                
+                // Atualiza os dados usando o mesmo padrão do delete
+                fetchEntradas().then(() => {
+                    // Após buscar as entradas, atualiza a exibição
+                    entradasFiltradas = [...entradas];
+                    mostrarPaginaEntradas(1);
+                });
+                
+                // Atualiza produtos
+                fetchProdutos().then(() => {
+                    // Após buscar os produtos, atualiza a exibição
+                    produtosFiltrados = [...produtos];
+                    produtosOrdenados = [...produtos];
+                    mostrarPagina(1);
+                });
+                
+                // Exibe mensagem de sucesso
+                exibirMensagemTemporariaSucesso(response.message);
             }
         },
         error: function (xhr, status, error) {
@@ -133,12 +153,32 @@ form_sc.on("submit", function (e) {
                 return;
             }
             if (response.type === 'success') {
+                // Fechar o modal de cadastro
+                const modalCadastro = bootstrap.Modal.getInstance(document.getElementById('modalCadastrarSaida'));
+                if (modalCadastro) {
+                    modalCadastro.hide();
+                }
+                
+                // Limpa os campos do formulário
+                limparCamposFormulario("#saida-cadastro");
+                
+                // Atualiza os dados usando o mesmo padrão do delete
+                fetchSaidas().then(() => {
+                    // Após buscar as saídas, atualiza a exibição
+                    saidasFiltradas = [...saidas];
+                    mostrarPaginaSaidas(1);
+                });
+                
+                // Atualiza produtos
+                fetchProdutos().then(() => {
+                    // Após buscar os produtos, atualiza a exibição
+                    produtosFiltrados = [...produtos];
+                    produtosOrdenados = [...produtos];
+                    mostrarPagina(1);
+                });
+                
+                // Exibe mensagem de sucesso
                 exibirMensagemTemporariaSucesso(response.message);
-                // Limpa apenas os campos específicos
-                limparCamposSaida();
-                // Recarrega saídas e produtos
-                fetchSaidas();
-                fetchProdutos();
             }
         },
         error: function (xhr, status, error) {
@@ -147,7 +187,6 @@ form_sc.on("submit", function (e) {
         }
     });
 });
-
 
 // Cadastro de clientes
 const form_cadastro_clientes = $("#cadastro-clientes");
@@ -184,7 +223,6 @@ form_cadastro_clientes.on("submit", function (e) {
         }
     });
 });
-
 
 // Cadastro de fornecedores
 const form_cadastro_fornecedores = $("#formAdicionarFornecedor");
@@ -276,4 +314,3 @@ function limparCamposSaida() {
     form.find("#clienteNaoCadastrado").prop('checked', false);
     form.find("#quantidadeSaida").val('');
 }
-

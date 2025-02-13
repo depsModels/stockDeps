@@ -1,81 +1,287 @@
-const BASE_URL = '/stockDeps/app';
-const itensPorPagina = 8;
-const maxBotoesPaginacao = 5; // Limite de botões de página exibidos
-// Adicione este código temporariamente para medir:
-console.time('operacao');
-// sua operação aqui (ex: busca)
-console.timeEnd('operacao');// Add this to your code where you want to measure:
-for(let i = 0; i < 10; i++) {
-    console.time('operacao');
-    // your operation here
-    console.timeEnd('operacao');
-}
+// Constants
+const BASE_URL = window.location.origin + "/stockDeps/app";
+const CONFIG = {
+  itensPorPagina: 8,
+  maxBotoesPaginacao: 5,
+  messageTimeout: 2500,
+  animationDuration: 400,
+};
+
+// State variables
 let produtos = [];
+let produtosOriginais = [];
 let clientes = [];
 let fornecedores = [];
 let entradas = [];
 let saidas = [];
 let categorias = [];
 
-let paginaAtual = 1;
 let paginaAtualEntradas = 1;
 let paginaAtualSaidas = 1;
+let paginaAtual = 1;
 
 let entradasFiltradas = [];
 let saidasFiltradas = [];
 let produtosFiltrados = [];
-
 let produtosOrdenados = [];
 
-async function fetchProdutos() {
-  const response = await fetch(`${BASE_URL}/getProdutos`);
-  produtosOriginais = await response.json(); // Salva os produtos originais
-  produtosFiltrados = [...produtosOriginais]; // Inicializa os filtrados com todos os produtos
-  produtosOrdenados = [...produtosFiltrados]; // Inicializa os ordenados com os produtos filtrados
-  buscarProduto(); // Inicializa o evento de busca 
-  mostrarPagina(paginaAtual); // Mostra a primeira página
+// Cache for performance optimization
+const cache = {
+  produtos: new Map(),
+  fornecedores: new Map(),
+  clientes: new Map(),
+  searchResults: new Map(),
+  clear() {
+    this.produtos.clear();
+    this.fornecedores.clear();
+    this.clientes.clear();
+    this.searchResults.clear();
+  },
+};
+
+// Performance tracking utilities
+const performanceMetrics = {
+  measurements: {},
+  startMeasure(label) {
+    this.measurements[label] = performance.now();
+  },
+  endMeasure(label) {
+    if (this.measurements[label]) {
+      const duration = performance.now() - this.measurements[label];
+      console.log(`${label}: ${duration.toFixed(2)}ms`);
+      delete this.measurements[label];
+      return duration;
+    }
+    return 0;
+  },
+};
+
+// Message display functions
+function exibirMensagem(mensagem, tipo = "info") {
+  const messageDiv = document.createElement("div");
+  messageDiv.className = `alert alert-${tipo} message-popup`;
+  messageDiv.innerHTML = mensagem;
+
+  document.body.appendChild(messageDiv);
+
+  // Add show class after a small delay to trigger animation
+  setTimeout(() => {
+    messageDiv.classList.add("show");
+  }, 10);
+
+  // Remove after timeout
+  setTimeout(() => {
+    messageDiv.remove();
+  }, CONFIG.messageTimeout);
 }
+
+function exibirMensagemTemporariaSucesso(msg) {
+  exibirMensagem(msg, "success");
+}
+
+function exibirMensagemTemporariaAviso(msg) {
+  exibirMensagem(msg, "warning");
+}
+
+function exibirMensagemTemporariaErro(msg) {
+  exibirMensagem(msg, "danger");
+}
+
+// Initialize data loading
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    await Promise.all([
+      fetchProdutos(),
+      fetchCategorias(),
+      fetchClientes(),
+      fetchFornecedores(),
+      fetchEntradas(),
+      fetchSaidas(),
+    ]);
+
+    // Set up event listeners after data is loaded
+    setupEventListeners();
+  } catch (error) {
+    console.error("Erro ao carregar dados:", error);
+  }
+});
+
+function setupEventListeners() {
+  const consultarEntradasBtn = document.getElementById("consultarEntradasBtn");
+  const consultarSaidasBtn = document.getElementById("consultarSaidasBtn");
+
+  if (consultarEntradasBtn) {
+    consultarEntradasBtn.addEventListener("click", async () => {
+      try {
+        // Carregar dados necessários
+        await Promise.all([
+          fetchProdutos(),
+          fetchFornecedores(),
+          fetchEntradas(),
+        ]);
+
+        const entradasModal = new bootstrap.Modal(
+          document.getElementById("entradasModal")
+        );
+        if (entradasModal) {
+          entradasModal.show();
+          mostrarPaginaEntradas(1);
+        }
+      } catch (error) {
+        console.error("Erro ao abrir modal de entradas:", error);
+        exibirMensagemTemporariaErro("Erro ao carregar dados de entradas");
+      }
+    });
+  }
+
+  if (consultarSaidasBtn) {
+    consultarSaidasBtn.addEventListener("click", async () => {
+      try {
+        // Carregar dados necessários
+        await Promise.all([fetchProdutos(), fetchClientes(), fetchSaidas()]);
+
+        const saidasModal = new bootstrap.Modal(
+          document.getElementById("saidasModal")
+        );
+        if (saidasModal) {
+          saidasModal.show();
+          mostrarPaginaSaidas(1);
+        }
+      } catch (error) {
+        console.error("Erro ao abrir modal de saídas:", error);
+        exibirMensagemTemporariaErro("Erro ao carregar dados de saídas");
+      }
+    });
+  }
+}
+
+async function fetchProdutos() {
+  performanceMetrics.startMeasure("fetchProdutos");
+  try {
+    const response = await fetch(`${BASE_URL}/getProdutos`);
+    produtosOriginais = (await response.json()) || [];
+    produtos = [...produtosOriginais];
+
+    // Index produtos for faster lookups
+    cache.produtos.clear();
+    produtos.forEach((p) => {
+      cache.produtos.set(p.id, p);
+      // Pre-process lowercase names for search
+      p._nomeLower = p.nome.toLowerCase();
+      p._codigoLower = p.codigo_produto.toLowerCase();
+    });
+
+    produtosFiltrados = [...produtos];
+    produtosOrdenados = [...produtosFiltrados];
+
+    const tbody = document.getElementById("corpoTabela");
+    if (tbody) {
+      mostrarPagina(paginaAtual);
+      buscarProduto();
+    }
+  } catch (error) {
+    console.error("Erro ao carregar produtos:", error);
+    cache.clear();
+  }
+  performanceMetrics.endMeasure("fetchProdutos");
+}
+
+async function fetchFornecedores() {
+  try {
+    const response = await fetch(`${BASE_URL}/getFornecedores`);
+    fornecedores = (await response.json()) || [];
+    cache.fornecedores.clear();
+    fornecedores.forEach((f) => cache.fornecedores.set(f.id, f));
+    preencherSugestoesFornecedores();
+  } catch (error) {
+    console.error("Erro ao carregar fornecedores:", error);
+  }
+}
+
+async function fetchClientes() {
+  try {
+    const response = await fetch(`${BASE_URL}/getClientes`);
+    clientes = (await response.json()) || [];
+    cache.clientes.clear();
+    clientes.forEach((c) => cache.clientes.set(c.id, c));
+  } catch (error) {
+    console.error("Erro ao carregar clientes:", error);
+  }
+}
+
 async function fetchCategorias() {
   const response = await fetch(`${BASE_URL}/getCategorias`);
   categorias = await response.json();
   preencherCategorias(categorias, () => alterarTabelaPorCategoriaSelecionada());
   renderizarTabela(categorias);
 }
-async function fetchClientes() {
-  const response = await fetch(`${BASE_URL}/getClientes`);
-  clientes = await response.json();
-  preencherClientes(clientes);
 
-}
-async function fetchFornecedores() {
-  const response = await fetch(`${BASE_URL}/getFornecedores`);
-  fornecedores = await response.json();
-  preencherFornecedores(fornecedores);
-}
 async function fetchEntradas() {
-  const response = await fetch(`${BASE_URL}/getEntradas`);
-  entradas = await response.json();
-  entradasFiltradas = [...entradas]; // Inicializa as filtradas
-  mostrarPaginaEntradas(paginaAtualEntradas);
-  buscarEntrada();
-  filtrarEntradasPorData();
+  performanceMetrics.startMeasure("fetchEntradas");
+  try {
+    // Primeiro, carregar dados necessários
+    await Promise.all([fetchProdutos(), fetchFornecedores()]);
+
+    const response = await fetch(`${BASE_URL}/getEntradas`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    console.log("Dados brutos recebidos:", data);
+
+    entradas = Array.isArray(data) ? data : [];
+    entradasFiltradas = [...entradas];
+
+    console.log("Entradas processadas:", {
+      total: entradas.length,
+      produtos: produtos.length,
+      fornecedores: fornecedores.length,
+    });
+
+    // Agora que temos todos os dados, mostrar a página
+    mostrarPaginaEntradas(1);
+  } catch (error) {
+    console.error("Erro ao carregar entradas:", error);
+    entradas = [];
+    entradasFiltradas = [];
+    exibirMensagemTemporariaErro(
+      "Erro ao carregar entradas. Por favor, tente novamente."
+    );
+  }
+  performanceMetrics.endMeasure("fetchEntradas");
 }
+
 async function fetchSaidas() {
-  const response = await fetch(`${BASE_URL}/getSaidas`);
-  saidas = await response.json();
-  saidasFiltradas = [...saidas];
-  mostrarPaginaSaidas(paginaAtualSaidas);
-  buscarSaida();
-  filtrarSaidasPorData();
+  performanceMetrics.startMeasure("fetchSaidas");
+  try {
+    const response = await fetch(`${BASE_URL}/getSaidas`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    saidas = Array.isArray(data) ? data : [];
+    saidasFiltradas = [...saidas];
+    console.log("Saídas carregadas:", saidas.length);
+  } catch (error) {
+    console.error("Erro ao carregar saídas:", error);
+    saidas = [];
+    saidasFiltradas = [];
+    exibirMensagemTemporariaErro(
+      "Erro ao carregar saídas. Por favor, tente novamente."
+    );
+  }
+  performanceMetrics.endMeasure("fetchSaidas");
 }
 
 function loadAllData() {
-  fetchProdutos();
-  fetchCategorias();
-  fetchClientes();
-  fetchFornecedores();
-  fetchEntradas();
-  fetchSaidas();
+  Promise.all([
+    fetchProdutos(),
+    fetchCategorias(),
+    fetchClientes(),
+    fetchFornecedores(),
+    fetchEntradas(),
+    fetchSaidas(),
+  ]).catch((error) => console.error("Erro ao carregar dados:", error));
 }
 
 function formatarData(dataISO) {
@@ -107,22 +313,43 @@ function renderizarTabela() {
   });
 }
 
-
 function buscarProduto() {
   const inputBuscarProduto = document.getElementById("buscarProduto");
+  let debounceTimer;
+  let lastQuery = "";
+
   inputBuscarProduto.addEventListener("input", function () {
-    const termoBusca = inputBuscarProduto.value.toLowerCase();
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      performanceMetrics.startMeasure("buscarProduto");
+      const termoBusca = inputBuscarProduto.value.toLowerCase();
 
-    produtosFiltrados = produtosOriginais.filter(
-      (produto) =>
-        produto.nome.toLowerCase().includes(termoBusca) ||
-        produto.codigo_produto.toLowerCase().includes(termoBusca)
-    );
+      // Skip if query hasn't changed
+      if (termoBusca === lastQuery) {
+        performanceMetrics.endMeasure("buscarProduto");
+        return;
+      }
+      lastQuery = termoBusca;
 
-    // Reiniciar a ordenação com os produtos filtrados
-    produtosOrdenados = [...produtosFiltrados];
-    paginaAtual = 1; // Reinicia na primeira página
-    mostrarPagina(paginaAtual); // Atualiza a tabela
+      // Check cache first
+      if (cache.searchResults.has(termoBusca)) {
+        produtosFiltrados = cache.searchResults.get(termoBusca);
+      } else {
+        // Use pre-processed lowercase names
+        produtosFiltrados = produtos.filter(
+          (produto) =>
+            produto._nomeLower.includes(termoBusca) ||
+            produto._codigoLower.includes(termoBusca)
+        );
+        // Cache results
+        cache.searchResults.set(termoBusca, produtosFiltrados);
+      }
+
+      produtosOrdenados = [...produtosFiltrados];
+      paginaAtual = 1;
+      mostrarPagina(paginaAtual);
+      performanceMetrics.endMeasure("buscarProduto");
+    }, 300);
   });
 }
 
@@ -132,21 +359,44 @@ function removerAcentos(str) {
 
 function buscarEntrada() {
   const inputBuscarEntrada = document.getElementById("buscarEntrada");
+  let debounceTimer;
+  let lastQuery = "";
+
   inputBuscarEntrada.addEventListener("input", function () {
-    const termoBusca = removerAcentos(inputBuscarEntrada.value.toLowerCase());
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      performanceMetrics.startMeasure("buscarEntrada");
+      const termoBusca = removerAcentos(inputBuscarEntrada.value.toLowerCase());
 
-    entradasFiltradas = entradas.filter((entrada) => {
-      const produto = produtosOriginais.find((p) => p.id == entrada.idProdutos);
-      const fornecedor = fornecedores.find((f) => f.id == entrada.idFornecedor);
-      
-      return (
-        removerAcentos(produto?.nome?.toLowerCase()).includes(termoBusca) ||
-        removerAcentos(fornecedor?.nome?.toLowerCase()).includes(termoBusca)
-      );
-    });
+      if (termoBusca === lastQuery) {
+        performanceMetrics.endMeasure("buscarEntrada");
+        return;
+      }
+      lastQuery = termoBusca;
 
-    paginaAtualEntradas = 1;
-    mostrarPaginaEntradas(paginaAtualEntradas); // Atualiza a tabela com os resultados filtrados
+      if (cache.searchResults.has("entrada_" + termoBusca)) {
+        entradasFiltradas = cache.searchResults.get("entrada_" + termoBusca);
+      } else {
+        entradasFiltradas = entradas.filter((entrada) => {
+          const produto = cache.produtos.get(entrada.idProdutos);
+          const fornecedor = cache.fornecedores.get(entrada.idFornecedor);
+
+          return (
+            removerAcentos(produto?.nome?.toLowerCase() || "").includes(
+              termoBusca
+            ) ||
+            removerAcentos(fornecedor?.nome?.toLowerCase() || "").includes(
+              termoBusca
+            )
+          );
+        });
+        cache.searchResults.set("entrada_" + termoBusca, entradasFiltradas);
+      }
+
+      paginaAtualEntradas = 1;
+      mostrarPaginaEntradas(paginaAtualEntradas);
+      performanceMetrics.endMeasure("buscarEntrada");
+    }, 300);
   });
 }
 
@@ -158,7 +408,8 @@ function buscarSaida() {
     saidasFiltradas = saidas.filter((saida) => {
       const produto = produtosOriginais.find((p) => p.id == saida.idProdutos);
       const cliente = Array.isArray(clientes)
-        ? clientes.find((c) => c.id == saida.idClientes)?.nome || "Cliente não encontrado"
+        ? clientes.find((c) => c.id == saida.idClientes)?.nome ||
+          "Cliente não encontrado"
         : "Cliente não cadastrado";
 
       return (
@@ -172,122 +423,136 @@ function buscarSaida() {
   });
 }
 
-
 function mostrarPaginaEntradas(pagina) {
-  const inicio = (pagina - 1) * itensPorPagina;
-  const fim = inicio + itensPorPagina;
-entradasFiltradas.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-  // Paginar os resultados corretamente
-  const entradasPagina = entradasFiltradas.slice(inicio, fim);
+  performanceMetrics.startMeasure("mostrarPaginaEntradas");
+  console.log("Iniciando mostrarPaginaEntradas:", { pagina });
 
-  // Selecionar a tabela e limpar seu conteúdo
-  const tabela = document.querySelector("#tabelaEntradas tbody");
-  tabela.innerHTML = "";
+  const inicio = (pagina - 1) * CONFIG.itensPorPagina;
+  const fim = inicio + CONFIG.itensPorPagina;
+  const tbody = document.getElementById("corpoTabelaEntradas");
 
-  // Exibir mensagem caso não haja entradas
-  if (entradasPagina.length === 0) {
-    tabela.innerHTML = `<tr><td colspan="6" class="text-center">Nenhuma entrada encontrada.</td></tr>`;
+  if (!tbody) {
+    console.error("Elemento corpoTabelaEntradas não encontrado");
     return;
   }
 
-  // Preencher a tabela com as entradas paginadas
-  entradasPagina.forEach((entrada) => {
-    const produto = produtosOriginais.find((p) => p.id == entrada.idProdutos);
-    const fornecedor = fornecedores.find((f) => f.id == entrada.idFornecedor);
-
-    
-
-    const row = `
-            <tr>
-                <td>${fornecedor?.nome || "Fornecedor não encontrado"}</td>
-                <td>${produto?.nome || "Produto não encontrado"}</td>
-                <td>${entrada.quantidade}</td>
-                <td>${entrada.preco.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</td>
-                <td>${formatarData(entrada.created_at)}</td>
-                <td>
-                    <button class="btn btn-primary btn-sm" onclick="editarEntrada(${entrada.id})">Editar</button>
-                    <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalExcluirEntrada" onclick="excluirEntrada(${entrada.id})">Excluir</button>
-                </td>
-            </tr>`;
-    tabela.insertAdjacentHTML("beforeend", row);
+  console.log("Estado atual:", {
+    entradasFiltradas: entradasFiltradas,
+    produtos: produtos,
+    fornecedores: fornecedores,
+    paginacao: {
+      inicio,
+      fim,
+      total: entradasFiltradas.length,
+    },
   });
 
-  // Configurar a paginação
-  configurarPaginacao(entradasFiltradas.length, mostrarPaginaEntradas, "#paginacaoEntradas", pagina);
-}
+  let html = "";
+  if (!Array.isArray(entradasFiltradas) || entradasFiltradas.length === 0) {
+    html =
+      '<tr><td colspan="6" class="text-center">Nenhuma entrada encontrada.</td></tr>';
+    console.log("Nenhuma entrada para exibir");
+  } else {
+    const entradasPagina = entradasFiltradas.slice(inicio, fim);
+    console.log("Processando entradas da página:", entradasPagina);
 
-function mostrarPaginaSaidas(pagina) {
-  const inicio = (pagina - 1) * itensPorPagina;
-  const fim = inicio + itensPorPagina;
+    html = entradasPagina
+      .map((entrada) => {
+        try {
+          const fornecedor = fornecedores.find(
+            (f) => parseInt(f.id) === parseInt(entrada.idFornecedor)
+          );
+          const produto = produtos.find(
+            (p) => parseInt(p.id) === parseInt(entrada.idProdutos)
+          );
 
-  // Ordenar as saídas da mais recente para a mais antiga
-  saidasFiltradas.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          console.log("Processando entrada:", {
+            entrada,
+            fornecedorEncontrado: fornecedor ? "sim" : "não",
+            produtoEncontrado: produto ? "sim" : "não",
+            idComparacao: {
+              fornecedor: {
+                entrada: parseInt(entrada.idFornecedores),
+                encontrado: fornecedor ? parseInt(fornecedor.id) : "N/A",
+              },
+              produto: {
+                entrada: parseInt(entrada.idProdutos),
+                encontrado: produto ? parseInt(produto.id) : "N/A",
+              },
+            },
+          });
 
-  // Paginar os resultados corretamente
-  const saidasPagina = saidasFiltradas.slice(inicio, fim);
+          // Garantir que os valores sejam números
+          const quantidade = parseInt(entrada.quantidade) || 0;
+          const preco = parseFloat(entrada.preco) || 0;
 
-  // Selecionar a tabela e limpar seu conteúdo
-  const tabela = document.querySelector("#tabelaSaidas tbody");
-  tabela.innerHTML = "";
-
-  // Exibir mensagem caso não haja saídas
-  if (saidasPagina.length === 0) {
-    tabela.innerHTML = `<tr><td colspan="6" class="text-center">Nenhuma saída encontrada.</td></tr>`;
-    return;
+          return `<tr>
+                    <td>${fornecedor?.nome || "Fornecedor não encontrado"}</td>
+                    <td>${produto?.nome || "Produto não encontrado"}</td>
+                    <td>${quantidade}</td>
+                    <td>${formatarPrecoParaExibicao(preco)}</td>
+                    <td>${formatarData(entrada.created_at)}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" onclick="editarEntrada(${
+                          entrada.id
+                        })">Editar</button>
+                        <button class="btn btn-danger btn-sm" onclick="excluirEntrada(${
+                          entrada.id
+                        })">Excluir</button>
+                    </td>
+                </tr>`;
+        } catch (error) {
+          console.error("Erro ao processar entrada:", error, entrada);
+          return `<tr><td colspan="6" class="text-center text-danger">Erro ao processar entrada</td></tr>`;
+        }
+      })
+      .join("");
   }
 
-  // Preencher a tabela com as saídas paginadas
-  saidasPagina.forEach((saida) => {
-    const produto = produtosOriginais.find((p) => p.id == saida.idProdutos);
-    const cliente = Array.isArray(clientes)
-    ? clientes.find((c) => c.id == saida.idClientes)?.nome ||
-      "Cliente não encontrado"
-    : "Cliente não cadastrado";
-
-    const row = `
-            <tr>
-                <td>${cliente?.nome || "Cliente não identificado"}</td>
-                <td>${produto?.nome || "Produto não encontrado"}</td>
-                <td>${saida.quantidade}</td>
-                <td>${saida.preco.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</td>
-                <td>${formatarData(saida.created_at)}</td>
-                <td>
-                    <button class="btn btn-primary btn-sm" onclick="editarSaida(${saida.id})">Editar</button>
-                    <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalExcluirSaida" onclick="excluirSaida(${saida.id})">Excluir</button>
-                </td>
-            </tr>`;
-    tabela.insertAdjacentHTML("beforeend", row);
-  });
-
-  // Configurar a paginação
-  configurarPaginacao(saidasFiltradas.length, mostrarPaginaSaidas, "#paginacaoSaidas", pagina);
+  tbody.innerHTML = html;
+  configurarPaginacao(
+    entradasFiltradas.length,
+    mostrarPaginaEntradas,
+    "#paginacaoEntradas",
+    pagina
+  );
+  performanceMetrics.endMeasure("mostrarPaginaEntradas");
 }
-
-
 
 function filtrarEntradasPorData() {
-  const dataFiltro = document.querySelector("#filtroDataEntrada").value; // Pega a data do filtro
-  if (!dataFiltro) return; // Não faz nada se o campo de data estiver vazio
+  performanceMetrics.startMeasure("filtrarEntradasPorData");
+  const dataInicial = document.getElementById("dataInicialEntrada").value;
+  const dataFinal = document.getElementById("dataFinalEntrada").value;
 
+  const cacheKey = `data_${dataInicial}_${dataFinal}`;
+  if (cache.searchResults.has(cacheKey)) {
+    entradasFiltradas = cache.searchResults.get(cacheKey);
+  } else {
+    if (!dataInicial && !dataFinal) {
+      entradasFiltradas = [...entradas];
+    } else {
+      const dataInicialObj = dataInicial ? new Date(dataInicial) : null;
+      const dataFinalObj = dataFinal ? new Date(dataFinal) : null;
 
+      entradasFiltradas = entradas.filter((entrada) => {
+        if (!entrada._date) {
+          entrada._date = new Date(entrada.created_at.split(" ")[0]);
+        }
+        return (
+          (!dataInicialObj || entrada._date >= dataInicialObj) &&
+          (!dataFinalObj || entrada._date <= dataFinalObj)
+        );
+      });
+    }
+    cache.searchResults.set(cacheKey, entradasFiltradas);
+  }
 
-  // Filtra as entradas com a data selecionada
-  entradasFiltradas = entradas.filter((entrada) => {
-    // Extrai a parte da data de created_at (formato YYYY-MM-DD)
-    const dataEntrada = entrada.created_at.split(" ")[0]; // Pega a data sem a hora (ex: 2024-12-22)
-
-
-    // Compara as datas no formato YYYY-MM-DD
-    return dataEntrada === dataFiltro;
-  });
-
-  // Verifica se há entradas filtradas, caso contrário exibe uma mensagem
   if (entradasFiltradas.length === 0) {
     mostrarMensagemNenhumaEntrada();
   } else {
-    // Exibe a primeira página das entradas filtradas
     mostrarPaginaEntradas(1);
   }
+  performanceMetrics.endMeasure("filtrarEntradasPorData");
 }
 
 function mostrarMensagemNenhumaEntrada() {
@@ -300,12 +565,10 @@ function filtrarSaidasPorData() {
   const dataFiltro = document.querySelector("#filtroDataSaida").value; // Pega a data do filtro
   if (!dataFiltro) return; // Não faz nada se o campo de data estiver vazio
 
-
   // Filtra as saídas com a data selecionada
   saidasFiltradas = saidas.filter((saida) => {
     // Extrai a parte da data de created_at (formato YYYY-MM-DD)
     const dataSaida = saida.created_at.split(" ")[0]; // Pega a data sem a hora (ex: 2024-12-22)
-
 
     // Compara as datas no formato YYYY-MM-DD
     return dataSaida === dataFiltro;
@@ -332,20 +595,28 @@ function configurarPaginacao(
   seletorPaginacao,
   paginaAtual
 ) {
-  const totalPaginas = Math.ceil(totalItens / itensPorPagina);
+  const totalPaginas = Math.ceil(totalItens / CONFIG.itensPorPagina);
   const paginacaoContainer = document.querySelector(seletorPaginacao);
   paginacaoContainer.innerHTML = ""; // Limpa a navegação
 
   if (totalPaginas <= 1) return; // Se há apenas uma página, não exibe paginação
 
-  const paginaInicial = Math.max(1, paginaAtual - Math.floor(maxBotoesPaginacao / 2));
-  const paginaFinal = Math.min(totalPaginas, paginaInicial + maxBotoesPaginacao - 1);
+  const paginaInicial = Math.max(
+    1,
+    paginaAtual - Math.floor(CONFIG.maxBotoesPaginacao / 2)
+  );
+  const paginaFinal = Math.min(
+    totalPaginas,
+    paginaInicial + CONFIG.maxBotoesPaginacao - 1
+  );
 
   // Botão "Anterior"
   const botaoAnterior = document.createElement("li");
   botaoAnterior.classList.add("page-item");
   if (paginaAtual > 1) {
-    botaoAnterior.innerHTML = `<a class="page-link" href="#" onclick="${callback.name}(${paginaAtual - 1})">&laquo;</a>`;
+    botaoAnterior.innerHTML = `<a class="page-link" href="#" onclick="${
+      callback.name
+    }(${paginaAtual - 1})">&laquo;</a>`;
   } else {
     botaoAnterior.classList.add("disabled");
     botaoAnterior.innerHTML = `<span class="page-link">&laquo;</span>`;
@@ -366,7 +637,9 @@ function configurarPaginacao(
   const botaoProximo = document.createElement("li");
   botaoProximo.classList.add("page-item");
   if (paginaAtual < totalPaginas) {
-    botaoProximo.innerHTML = `<a class="page-link" href="#" onclick="${callback.name}(${paginaAtual + 1})">&raquo;</a>`;
+    botaoProximo.innerHTML = `<a class="page-link" href="#" onclick="${
+      callback.name
+    }(${paginaAtual + 1})">&raquo;</a>`;
   } else {
     botaoProximo.classList.add("disabled");
     botaoProximo.innerHTML = `<span class="page-link">&raquo;</span>`;
@@ -374,212 +647,211 @@ function configurarPaginacao(
   paginacaoContainer.appendChild(botaoProximo);
 }
 
-function editarEntrada(id) {
-  const entrada = entradasFiltradas.find((e) => e.id === id); // Encontrar a entrada
-
-  if (entrada) {
-    // Obter o nome do produto com base no id do produto
-    const produto = produtosOriginais.find((p) => p.id === entrada.idProdutos);
-    const nomeProduto = produto ? produto.nome : "Produto não encontrado";
-
-    // Preencher os campos do modal
-    document.getElementById("idEntradaEditar").value = id;
-    document.getElementById("entradaProduto").value = nomeProduto;
-    document.getElementById("entradaQuantidade").value = entrada.quantidade;
-    document.getElementById("entradaPreco").value = entrada.preco;
-
-    // Abrir o modal
-    const modalEditarEntrada = new bootstrap.Modal(
-      document.getElementById("modalEditarEntrada"),
-      {
-        backdrop: "static", // Não fecha o modal de consulta ao abrir o de editar
-        keyboard: false, // Impede o fechamento do modal com a tecla ESC
-      }
-    );
-    modalEditarEntrada.show();
-  } else {
-    console.error("Entrada não encontrada.");
-  }
+function loadAllData() {
+  Promise.all([
+    fetchProdutos(),
+    fetchCategorias(),
+    fetchClientes(),
+    fetchFornecedores(),
+    fetchEntradas(),
+    fetchSaidas(),
+  ]).catch((error) => console.error("Erro ao carregar dados:", error));
 }
 
-function excluirEntrada(entradaId) {
-  // Insere o ID da entrada no campo oculto do modal
-  const inputEntradaId = document.getElementById("idEntradaExcluir");
-  if (inputEntradaId) {
-    inputEntradaId.value = entradaId;
-  }
-
-  // Fecha quaisquer modais abertos
-  const modaisAbertos = document.querySelectorAll(".modal.show");
-  modaisAbertos.forEach((modal) => {
-    const bootstrapModal = bootstrap.Modal.getInstance(modal);
-    if (bootstrapModal) bootstrapModal.hide();
+function formatarData(dataISO) {
+  const data = new Date(dataISO);
+  return data.toLocaleDateString("pt-BR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
   });
-
-  // Remove backdrop existente, se houver
-  document
-    .querySelectorAll(".modal-backdrop")
-    .forEach((backdrop) => backdrop.remove());
-
-  // Exibe o modal de exclusão usando Bootstrap
-  const modalExcluirEntrada = new bootstrap.Modal(
-    document.getElementById("modalExcluirEntrada")
-  );
-  modalExcluirEntrada.show();
 }
 
-function editarSaida(id) {
-  const saida = saidas.find((s) => s.id === id); // Encontre a saída pelo ID
-  const produto = produtosOriginais.find((p) => p.id === saida.idProdutos); // Encontre o produto correspondente à saída
+function renderizarTabela() {
+  const tbody = document.getElementById("corpoTabelaCategorias");
+  tbody.innerHTML = "";
 
-  if (saida) {
-    // Preencher os campos no modal
-    document.getElementById("idEditarSaida").value = saida.id;
-    document.getElementById("saidaProduto").value = produto.nome; // Nome do produto (não editável)
-    document.getElementById("saidaQuantidade").value = saida.quantidade; // Quantidade
-    document.getElementById("saidaPreco").value = saida.preco; // Preço
-
-    // Abrir o modal de edição sem fechar o modal anterior
-    const modalEditarSaida = new bootstrap.Modal(
-      document.getElementById("modalEditarSaida"),
-      {
-        backdrop: "static", // Não fecha o modal de consulta ao abrir o de editar
-        keyboard: false, // Impede o fechamento do modal com a tecla ESC
-      }
-    );
-    modalEditarSaida.show();
-  } else {
-    console.error("Saída não encontrada.");
-  }
-}
-
-function excluirSaida(saidaId) {
-  // Fecha manualmente qualquer modal aberto
-  const modaisAbertos = document.querySelectorAll(".modal.show");
-  modaisAbertos.forEach((modal) => {
-    const bootstrapModal = bootstrap.Modal.getInstance(modal);
-    if (bootstrapModal) bootstrapModal.hide();
-  });
-
-  // Remove backdrop existente, se houver
-  document
-    .querySelectorAll(".modal-backdrop")
-    .forEach((backdrop) => backdrop.remove());
-
-  // Configura o modal de exclusão
-  const inputSaidaId = document.getElementById("idSaidaExcluir");
-  if (inputSaidaId) {
-    inputSaidaId.value = saidaId;
-  }
-
-  // Exibe o modal de exclusão
-  const modalExcluir = new bootstrap.Modal(
-    document.getElementById("modalExcluirSaida")
-  );
-  modalExcluir.show();
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  const consultarEntradasBtn = document.getElementById("consultarEntradasBtn");
-  const consultarSaidasBtn = document.getElementById("consultarSaidasBtn");
-  const entradasModalElement = document.getElementById("entradasModal");
-  const saidasModalElement = document.getElementById("saidasModal");
-
-  if (
-    !consultarEntradasBtn ||
-    !consultarSaidasBtn ||
-    !entradasModalElement ||
-    !saidasModalElement
-  ) {
-    console.error("Botões ou modais não encontrados no DOM.");
-    return;
-  }
-
-  // Inicializar os modais
-  const entradasModal = new bootstrap.Modal(entradasModalElement);
-  const saidasModal = new bootstrap.Modal(saidasModalElement);
-
-  consultarEntradasBtn.addEventListener("click", () => {
-    entradasModal.show();
-    fetchEntradas();
-  });
-
-  consultarSaidasBtn.addEventListener("click", () => {
-    saidasModal.show();
-    fetchSaidas();
-  });
-});
-
-function preencherTabelaProdutos(produtosPaginados) {
-  const corpoTabela = document.getElementById("corpoTabela");
-  corpoTabela.innerHTML = ""; // Limpa a tabela
-
-  if (!produtosPaginados || produtosPaginados.length === 0) {
-    return; // Se não há produtos, apenas limpa a tabela
-  }
-
-  produtosPaginados.forEach((produto) => {
+  categorias.forEach((categoria) => {
     const tr = document.createElement("tr");
-    const {
-      codigo_produto,
-      nome,
-      descricao,
-      preco,
-      quantidade,
-      unidade_medida,
-    } = produto;
 
-    const precoFormatado = preco.toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL",
+    tr.innerHTML = `
+            <td>${categoria.nome}</td>
+            <td>${categoria.descricao}</td>
+            <td>
+                <button class="btn btn-primary btn-sm" onclick="editarCategoria(${categoria.id})">Editar</button>
+                <button class="btn btn-danger btn-sm" onclick="excluirCategoria(${categoria.id})">Excluir</button>
+            </td>
+        `;
+
+    tbody.appendChild(tr);
+  });
+}
+
+function buscarProduto() {
+  const inputBuscarProduto = document.getElementById("buscarProduto");
+  let debounceTimer;
+  let lastQuery = "";
+
+  inputBuscarProduto.addEventListener("input", function () {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      performanceMetrics.startMeasure("buscarProduto");
+      const termoBusca = inputBuscarProduto.value.toLowerCase();
+
+      // Skip if query hasn't changed
+      if (termoBusca === lastQuery) {
+        performanceMetrics.endMeasure("buscarProduto");
+        return;
+      }
+      lastQuery = termoBusca;
+
+      // Check cache first
+      if (cache.searchResults.has(termoBusca)) {
+        produtosFiltrados = cache.searchResults.get(termoBusca);
+      } else {
+        // Use pre-processed lowercase names
+        produtosFiltrados = produtos.filter(
+          (produto) =>
+            produto._nomeLower.includes(termoBusca) ||
+            produto._codigoLower.includes(termoBusca)
+        );
+        // Cache results
+        cache.searchResults.set(termoBusca, produtosFiltrados);
+      }
+
+      produtosOrdenados = [...produtosFiltrados];
+      paginaAtual = 1;
+      mostrarPagina(paginaAtual);
+      performanceMetrics.endMeasure("buscarProduto");
+    }, 300);
+  });
+}
+
+function removerAcentos(str) {
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function buscarEntrada() {
+  const inputBuscarEntrada = document.getElementById("buscarEntrada");
+  let debounceTimer;
+  let lastQuery = "";
+
+  inputBuscarEntrada.addEventListener("input", function () {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      performanceMetrics.startMeasure("buscarEntrada");
+      const termoBusca = removerAcentos(inputBuscarEntrada.value.toLowerCase());
+
+      if (termoBusca === lastQuery) {
+        performanceMetrics.endMeasure("buscarEntrada");
+        return;
+      }
+      lastQuery = termoBusca;
+
+      if (cache.searchResults.has("entrada_" + termoBusca)) {
+        entradasFiltradas = cache.searchResults.get("entrada_" + termoBusca);
+      } else {
+        entradasFiltradas = entradas.filter((entrada) => {
+          const produto = cache.produtos.get(entrada.idProdutos);
+          const fornecedor = cache.fornecedores.get(entrada.idFornecedor);
+
+          return (
+            removerAcentos(produto?.nome?.toLowerCase() || "").includes(
+              termoBusca
+            ) ||
+            removerAcentos(fornecedor?.nome?.toLowerCase() || "").includes(
+              termoBusca
+            )
+          );
+        });
+        cache.searchResults.set("entrada_" + termoBusca, entradasFiltradas);
+      }
+
+      paginaAtualEntradas = 1;
+      mostrarPaginaEntradas(paginaAtualEntradas);
+      performanceMetrics.endMeasure("buscarEntrada");
+    }, 300);
+  });
+}
+
+function buscarSaida() {
+  const inputBuscarSaida = document.getElementById("buscarSaida");
+  inputBuscarSaida.addEventListener("input", function () {
+    const termoBusca = removerAcentos(inputBuscarSaida.value.toLowerCase());
+
+    saidasFiltradas = saidas.filter((saida) => {
+      const produto = produtosOriginais.find((p) => p.id == saida.idProdutos);
+      const cliente = Array.isArray(clientes)
+        ? clientes.find((c) => c.id == saida.idClientes)?.nome ||
+          "Cliente não encontrado"
+        : "Cliente não cadastrado";
+
+      return (
+        removerAcentos(produto?.nome?.toLowerCase()).includes(termoBusca) ||
+        removerAcentos(cliente.toLowerCase()).includes(termoBusca)
+      );
     });
 
-    const status = quantidade > 0 ? "Disponível" : "Indisponível";
-    const dados = [
-      codigo_produto,
-      nome,
-      descricao,
-      precoFormatado,
-      quantidade,
-      unidade_medida,
-      status,
-    ];
-
-    dados.forEach((dado) => {
-      const td = document.createElement("td");
-      td.textContent = dado;
-      tr.appendChild(td);
-    });
-
-    tr.appendChild(createButtonGroup(produto)); // Adiciona os botões de ação
-    corpoTabela.appendChild(tr);
+    paginaAtualSaidas = 1;
+    mostrarPaginaSaidas(paginaAtualSaidas); // Atualiza a tabela com os resultados filtrados
   });
 }
 
 function mostrarPagina(pagina) {
-  paginaAtual = pagina;
+  performanceMetrics.startMeasure("mostrarPagina");
+  const tbody = document.getElementById("corpoTabela");
+  if (!tbody) {
+    console.error("Elemento tbody não encontrado");
+    return;
+  }
 
-  const inicio = (pagina - 1) * itensPorPagina;
-  const fim = inicio + itensPorPagina;
+  const inicio = (pagina - 1) * CONFIG.itensPorPagina;
+  const fim = inicio + CONFIG.itensPorPagina;
+  const produtosPagina = produtosOrdenados.slice(inicio, fim);
 
-  const produtosNaPagina = produtosOrdenados.slice(inicio, fim); // Paginar com a lista ordenada
-  preencherTabelaProdutos(produtosNaPagina);
+  let html;
+  if (produtosPagina.length === 0) {
+    html =
+      '<tr><td colspan="8" class="text-center">Nenhum produto encontrado.</td></tr>';
+  } else {
+    html = produtosPagina
+      .map((produto) => {
+        const status = produto.quantidade > 0 ? "Disponível" : "Indisponível";
+        return `<tr>
+                <td>${produto.codigo_produto || ""}</td>
+                <td>${produto.nome || ""}</td>
+                <td>${produto.descricao || ""}</td>
+                <td>${formatarPrecoParaExibicao(produto.preco)}</td>
+                <td>${produto.quantidade || 0}</td>
+                <td>${produto.unidade_medida || ""}</td>
+                <td>${status}</td>
+                <td class="text-center">
+                    <div class="btn-group" role="group">
+                        ${createButtonGroup(produto)}
+                    </div>
+                </td>
+            </tr>`;
+      })
+      .join("");
+  }
 
-  atualizarPaginacao(produtosOrdenados.length, paginaAtual); // Atualiza paginação com a lista ordenada
+  tbody.innerHTML = html;
+  atualizarPaginacao(produtosOrdenados.length, pagina);
+  performanceMetrics.endMeasure("mostrarPagina");
 }
 
 function atualizarPaginacao(totalProdutos, paginaAtual) {
-  const totalPaginas = Math.ceil(totalProdutos / itensPorPagina);
+  const totalPaginas = Math.ceil(totalProdutos / CONFIG.itensPorPagina);
   const pagination = document.getElementById("pagination");
   pagination.innerHTML = ""; // Limpa o container de paginação
 
   const paginaInicial = Math.max(
     1,
-    paginaAtual - Math.floor(maxBotoesPaginacao / 2)
+    paginaAtual - Math.floor(CONFIG.maxBotoesPaginacao / 2)
   );
   const paginaFinal = Math.min(
     totalPaginas,
-    paginaInicial + maxBotoesPaginacao - 1
+    paginaInicial + CONFIG.maxBotoesPaginacao - 1
   );
 
   // Botão "Anterior"
@@ -625,7 +897,6 @@ function atualizarPaginacao(totalProdutos, paginaAtual) {
   }
 }
 
-
 function alterarTabelaPorCategoriaSelecionada() {
   const categoriaSelecionada = document.getElementById("categoria").value;
   const categoriaSelecionadaNumero = Number(categoriaSelecionada);
@@ -661,13 +932,13 @@ function preencherCategorias(categorias, callbackMostrarProdutos) {
   selectElementModal.innerHTML = "";
   selectElementEditar.innerHTML = "";
 
-  // Adiciona a opção "Todas" no select principal
+  // Adicionar a opção "Todas" no select principal
   const optionAll = document.createElement("option");
   optionAll.value = ""; // Valor vazio para identificar a exibição de todos os produtos
   optionAll.textContent = "Todas";
   selectElement.appendChild(optionAll);
 
-  // Adiciona o placeholder "Selecione a categoria" no modal select
+  // Adicionar o placeholder "Selecione a categoria" no modal select
   const placeholderModal = document.createElement("option");
   placeholderModal.value = ""; // Valor vazio para validação
   placeholderModal.textContent = "Selecione a categoria";
@@ -790,47 +1061,431 @@ function preencherClientes(clientes) {
   });
 }
 
-function abrirModalAdicionarProduto() {
-  const modalAdicionarProduto = new bootstrap.Modal(
-    document.getElementById("modalAdicionarProduto")
-  );
-  modalAdicionarProduto.show();
+function createButtonGroup(produto) {
+  if (!produto || !produto.id) return "";
+  return `
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-primary btn-sm" onclick="editarProduto(${produto.id})">
+                <i class="bi bi-pencil"></i> Editar
+            </button>
+            <button type="button" class="btn btn-danger btn-sm" onclick="excluirProduto(${produto.id})">
+                <i class="bi bi-trash"></i> Excluir
+            </button>
+            <button type="button" class="btn btn-success btn-sm" onclick="abrirModalEntrada(${produto.id})">
+                <i class="bi bi-box-arrow-in-down"></i> Entrada
+            </button>
+            <button type="button" class="btn btn-warning btn-sm" onclick="abrirModalSaida(${produto.id})">
+                <i class="bi bi-box-arrow-up"></i> Saída
+            </button>
+        </div>
+    `;
 }
 
-function abrirModalEditarEntrada(entrada) {
-  const modalEditarEntrada = new bootstrap.Modal(
-    document.getElementById("modalEditarEntrada")
+function editarProduto(id) {
+  const produto = produtos.find((p) => p.id === id);
+  if (!produto) {
+    console.error("Produto não encontrado");
+    return;
+  }
+
+  // Preencher os campos do modal
+  document.getElementById("idProdutoUpdate").value = produto.id;
+  document.getElementById("codigoProdutoEditar").value =
+    produto.codigo_produto || "";
+  document.getElementById("nomeProduto").value = produto.nome || "";
+  document.getElementById("descricaoProduto").value = produto.descricao || "";
+
+  const precoInput = document.getElementById("precoProduto");
+  if (precoInput) {
+    precoInput.value = formatarPrecoParaInput(produto.preco);
+  }
+
+  const categoriaSelect = document.getElementById("categoriaProdutoEditar");
+  if (categoriaSelect) {
+    // Limpar opções existentes
+    categoriaSelect.innerHTML =
+      '<option value="">Selecione uma categoria</option>';
+
+    // Adicionar categorias
+    categorias.forEach((categoria) => {
+      const option = document.createElement("option");
+      option.value = categoria.id;
+      option.textContent = categoria.nome;
+      if (produto.idCategoria === categoria.id) {
+        option.selected = true;
+      }
+      categoriaSelect.appendChild(option);
+    });
+  }
+
+  // Atualizar a imagem do produto
+  const previewImagem = document.getElementById("previewImagem");
+  if (previewImagem) {
+    if (produto.imagem) {
+      previewImagem.src = produto.imagem;
+      previewImagem.style.display = "block";
+    } else {
+      previewImagem.src = "";
+      previewImagem.style.display = "none";
+    }
+  }
+
+  // Adicionar listener para preview de nova imagem
+  const inputImagem = document.getElementById("fotoProduto");
+  if (inputImagem) {
+    inputImagem.onchange = function (e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          previewImagem.src = e.target.result;
+          previewImagem.style.display = "block";
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+  }
+
+  const modalEditar = new bootstrap.Modal(
+    document.getElementById("modalEditar")
   );
-  document.getElementById("idProdutoEntrada").value = entrada.idProdutos;
-  document.getElementById("quantidadeEntrada").value = entrada.quantidade;
-  modalEditarEntrada.show();
-
-  document.getElementById("formEditarEntrada").onsubmit = function (e) {
-    e.preventDefault();
-    const idProduto = document.getElementById("idProdutoEntrada").value;
-    const quantidade = document.getElementById("quantidadeEntrada").value;
-
-    alert(`Entrada Editada: Produto ID ${idProduto}, Quantidade ${quantidade}`);
-    modalEditarEntrada.hide();
-  };
+  modalEditar.show();
 }
 
-function abrirModalEditarSaida(saida) {
+function excluirProduto(id) {
+  const produto = produtos.find((p) => p.id === id);
+  if (!produto) {
+    console.error("Produto não encontrado");
+    return;
+  }
+
+  document.getElementById("idProdutoExcluir").value = id;
+  const modalExcluir = new bootstrap.Modal(
+    document.getElementById("modalExcluir")
+  );
+  modalExcluir.show();
+}
+
+function abrirModalEntrada(id) {
+  const produto = produtos.find((p) => p.id === id);
+  if (!produto) {
+    console.error("Produto não encontrado");
+    return;
+  }
+
+  document.getElementById("produtoId").value = id;
+  const precoInput = document.getElementById("precoEntrada");
+  if (precoInput) {
+    precoInput.value = formatarPrecoParaInput(0);
+  }
+
+  const modalEntrada = new bootstrap.Modal(
+    document.getElementById("modalEntrada")
+  );
+  modalEntrada.show();
+}
+
+function abrirModalSaida(id) {
+  const produto = produtos.find((p) => p.id === id);
+  if (!produto) {
+    console.error("Produto não encontrado");
+    return;
+  }
+
+  const produtoIdInput = document.getElementById("produtoId2");
+  const precoInput = document.getElementById("precoSaida");
+
+  if (produtoIdInput) {
+    produtoIdInput.value = id;
+  }
+
+  if (precoInput) {
+    precoInput.value = formatarPrecoParaInput(produto.preco);
+  }
+
+  const modalSaida = new bootstrap.Modal(document.getElementById("modalSaida"));
+  modalSaida.show();
+}
+
+// Funções de formatação de preço
+function formatarPreco(input) {
+  let valor = input.value.replace(/\D/g, "");
+  valor = (valor / 100).toFixed(2);
+  input.value = formatarPrecoParaExibicao(valor);
+}
+
+function formatarPrecoParaExibicao(valor) {
+  if (!valor) return "R$ 0,00";
+
+  const numero = typeof valor === "string" ? parseFloat(valor) : valor;
+  return `R$ ${numero.toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function formatarPrecoParaInput(valor) {
+  if (!valor) return "0,00";
+
+  const numero = typeof valor === "string" ? parseFloat(valor) : valor;
+  return numero.toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function converterPrecoParaNumero(precoStr) {
+  if (!precoStr) return 0;
+  return parseFloat(precoStr.replace(/[^\d,]/g, "").replace(",", "."));
+}
+
+// Adicionar formatação de preço para todos os inputs de preço
+document.addEventListener("DOMContentLoaded", function () {
+  const precoInputs = document.querySelectorAll('input[data-tipo="preco"]');
+  precoInputs.forEach((input) => {
+    input.addEventListener("input", function (e) {
+      formatarPreco(e.target);
+    });
+  });
+});
+
+function ordenarTabela(coluna, idSeta) {
+  performanceMetrics.startMeasure("ordenarTabela");
+  if (ordemAtual.coluna === coluna) {
+    ordemAtual.crescente = !ordemAtual.crescente;
+  } else {
+    ordemAtual.coluna = coluna;
+    ordemAtual.crescente = true;
+  }
+
+  const setas = document.querySelectorAll(".seta");
+  setas.forEach((seta) => (seta.textContent = ""));
+
+  const setaAtual = document.getElementById(idSeta);
+  setaAtual.textContent = ordemAtual.crescente ? " ↑" : " ↓";
+
+  produtosOrdenados.sort((a, b) => {
+    let valorA = a[coluna];
+    let valorB = b[coluna];
+
+    if (typeof valorA === "string") {
+      valorA = valorA.toLowerCase();
+      valorB = valorB.toLowerCase();
+    }
+
+    if (valorA < valorB) return ordemAtual.crescente ? -1 : 1;
+    if (valorA > valorB) return ordemAtual.crescente ? 1 : -1;
+    return 0;
+  });
+
+  mostrarPagina(paginaAtual);
+  performanceMetrics.endMeasure("ordenarTabela");
+}
+
+function mostrarPaginaSaidas(pagina) {
+  performanceMetrics.startMeasure("mostrarPaginaSaidas");
+  const inicio = (pagina - 1) * CONFIG.itensPorPagina;
+  const fim = inicio + CONFIG.itensPorPagina;
+  const tbody = document.getElementById("corpoTabelaSaidas");
+
+  if (!tbody) {
+    console.error("Elemento corpoTabelaSaidas não encontrado");
+    return;
+  }
+
+  let html = "";
+  if (!Array.isArray(saidasFiltradas) || saidasFiltradas.length === 0) {
+    html =
+      '<tr><td colspan="6" class="text-center">Nenhuma saída encontrada.</td></tr>';
+  } else {
+    html = saidasFiltradas
+      .slice(inicio, fim)
+      .map((saida) => {
+        try {
+          const cliente = clientes.find(
+            (c) => parseInt(c.id) === parseInt(saida.idClientes)
+          );
+          const produto = produtos.find(
+            (p) => parseInt(p.id) === parseInt(saida.idProdutos)
+          );
+
+          // Garantir que os valores sejam números
+          const quantidade = parseInt(saida.quantidade) || 0;
+          const preco = parseFloat(saida.preco) || 0;
+
+          return `<tr>
+                    <td>${cliente?.nome || "Cliente não encontrado"}</td>
+                    <td>${produto?.nome || "Produto não encontrado"}</td>
+                    <td>${quantidade}</td>
+                    <td>${formatarPrecoParaExibicao(preco)}</td>
+                    <td>${formatarData(saida.created_at)}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" onclick="editarSaida(${
+                          saida.id
+                        })">Editar</button>
+                        <button class="btn btn-danger btn-sm" onclick="excluirSaida(${
+                          saida.id
+                        })">Excluir</button>
+                    </td>
+                </tr>`;
+        } catch (error) {
+          console.error("Erro ao processar saída:", error, saida);
+          return `<tr><td colspan="6" class="text-center text-danger">Erro ao processar saída</td></tr>`;
+        }
+      })
+      .join("");
+  }
+
+  tbody.innerHTML = html;
+  configurarPaginacao(
+    saidasFiltradas.length,
+    mostrarPaginaSaidas,
+    "#paginacaoSaidas",
+    pagina
+  );
+  performanceMetrics.endMeasure("mostrarPaginaSaidas");
+}
+
+function editarSaida(id) {
+  const saida = saidas.find((s) => s.id === id);
+  if (!saida) {
+    console.error("Saída não encontrada");
+    return;
+  }
+
+  // Fechar modal de saídas antes de abrir o modal de edição
+  const saidasModal = bootstrap.Modal.getInstance(
+    document.getElementById("saidasModal")
+  );
+  if (saidasModal) {
+    saidasModal.hide();
+  }
+
+  const produto = produtosOriginais.find((p) => p.id === saida.idProdutos);
+  const nomeProduto = produto ? produto.nome : "Produto não encontrado";
+
+  document.getElementById("idEditarSaida").value = saida.id;
+  document.getElementById("saidaProduto").value = nomeProduto;
+  document.getElementById("saidaQuantidade").value = saida.quantidade;
+  document.getElementById("saidaPreco").value = saida.preco;
+
   const modalEditarSaida = new bootstrap.Modal(
     document.getElementById("modalEditarSaida")
   );
-  document.getElementById("idProdutoSaida").value = saida.idProdutos;
-  document.getElementById("quantidadeSaida").value = saida.quantidade;
   modalEditarSaida.show();
 
-  document.getElementById("formEditarSaida").onsubmit = function (e) {
-    e.preventDefault();
-    const idProduto = document.getElementById("idProdutoSaida").value;
-    const quantidade = document.getElementById("quantidadeSaida").value;
+  // Adicionar listener para quando o modal de edição for fechado
+  document.getElementById("modalEditarSaida").addEventListener(
+    "hidden.bs.modal",
+    function () {
+      fecharTodosModais();
+    },
+    { once: true }
+  );
+}
 
-    alert(`Saída Editada: Produto ID ${idProduto}, Quantidade ${quantidade}`);
-    modalEditarSaida.hide();
-  };
+function excluirSaida(saidaId) {
+  const saida = saidas.find((s) => s.id === saidaId);
+  if (!saida) {
+    console.error("Saída não encontrada");
+    return;
+  }
+
+  document.getElementById("idSaidaExcluir").value = saidaId;
+
+  // Fechar modal de saídas antes de abrir o modal de exclusão
+  const saidasModal = bootstrap.Modal.getInstance(
+    document.getElementById("saidasModal")
+  );
+  if (saidasModal) {
+    saidasModal.hide();
+  }
+
+  const modalExcluir = new bootstrap.Modal(
+    document.getElementById("modalExcluirSaida")
+  );
+  modalExcluir.show();
+
+  // Adicionar listener para quando o modal de exclusão for fechado
+  document.getElementById("modalExcluirSaida").addEventListener(
+    "hidden.bs.modal",
+    function () {
+      fecharTodosModais();
+      removerBackdrops();
+    },
+    { once: true }
+  );
+}
+
+function editarEntrada(id) {
+  const entrada = entradasFiltradas.find((e) => e.id === id);
+  if (!entrada) {
+    console.error("Entrada não encontrada");
+    return;
+  }
+
+  // Fechar modal de entradas antes de abrir o modal de edição
+  const entradasModal = bootstrap.Modal.getInstance(
+    document.getElementById("entradasModal")
+  );
+  if (entradasModal) {
+    entradasModal.hide();
+  }
+
+  const produto = produtosOriginais.find((p) => p.id === entrada.idProdutos);
+  const nomeProduto = produto ? produto.nome : "Produto não encontrado";
+
+  document.getElementById("idEntradaEditar").value = id;
+  document.getElementById("entradaProduto").value = nomeProduto;
+  document.getElementById("entradaQuantidade").value = entrada.quantidade;
+  document.getElementById("entradaPreco").value = entrada.preco;
+
+  const modalEditarEntrada = new bootstrap.Modal(
+    document.getElementById("modalEditarEntrada")
+  );
+  modalEditarEntrada.show();
+
+  // Adicionar listener para quando o modal de edição for fechado
+  document.getElementById("modalEditarEntrada").addEventListener(
+    "hidden.bs.modal",
+    function () {
+      fecharTodosModais();
+    },
+    { once: true }
+  );
+}
+
+function excluirEntrada(id) {
+  const entrada = entradasFiltradas.find((e) => e.id === id);
+  if (!entrada) {
+    console.error("Entrada não encontrada");
+    return;
+  }
+
+  document.getElementById("idEntradaExcluir").value = id;
+
+  // Fechar modal de entradas antes de abrir o modal de exclusão
+  const entradasModal = bootstrap.Modal.getInstance(
+    document.getElementById("entradasModal")
+  );
+  if (entradasModal) {
+    entradasModal.hide();
+  }
+
+  const modalExcluirEntrada = new bootstrap.Modal(
+    document.getElementById("modalExcluirEntrada")
+  );
+  modalExcluirEntrada.show();
+
+  // Adicionar listener para quando o modal de exclusão for fechado
+  document.getElementById("modalExcluirEntrada").addEventListener(
+    "hidden.bs.modal",
+    function () {
+      fecharTodosModais();
+      removerBackdrops();
+    },
+    { once: true }
+  );
 }
 
 document.getElementById("categoria").addEventListener("change", function () {
@@ -848,301 +1503,703 @@ document
     } else {
       clienteInput.readOnly = false; // Atualiza o campo oculto com o valor do input
     }
-
   });
 
-function createButtonGroup(produto) {
-  const actions = [
-    {
-      text: "Editar",
-      class: "btn-primary",
-      action: () => openModal("Editar", produto, produto.id, categorias),
-    },
-    {
-      text: "Excluir",
-      class: "btn-danger",
-      action: () => openModal("Excluir", produto.id),
-    },
-    {
-      text: "Adicionar Entrada",
-      class: "btn-success",
-      action: () => openModalEntrada(produto.id),
-    },
-    {
-      text: "Adicionar Saída",
-      class: "btn-warning",
-      action: () => openModalSaida(produto.id, produto.preco),
-    },
-  ];
-
-  const btnGroup = document.createElement("div");
-  btnGroup.classList.add("btn-group", "w-100");
-  actions.forEach(({ text, class: btnClass, action }) => {
-    const btn = document.createElement("button");
-    btn.classList.add("btn", btnClass);
-    btn.textContent = text;
-    btn.onclick = action;
-    btnGroup.appendChild(btn);
-  });
-
-  const tdAcoes = document.createElement("td");
-  tdAcoes.colSpan = 2;
-  tdAcoes.appendChild(btnGroup);
-  return tdAcoes;
-}
-
-function openModal(tipo, produto) {
-  const modalId = tipo === "Editar" ? "modalEditar" : "modalExcluir";
-
-  if (tipo === "Editar") {
-    document.getElementById("idProdutoUpdate").value = produto.id;
-    document.getElementById("codigoProdutoEditar").value =
-      produto.codigo_produto;
-    document.getElementById("nomeProduto").value = produto.nome;
-    document.getElementById("descricaoProduto").value = produto.descricao;
-    document.getElementById("fotoProduto").value = ""; // Limpa o campo (opcional)
-    document.getElementById("previewImagem").src = produto.imagem; // Define o src da imagem
-    document.getElementById("previewImagem").style.display = "block"; // Mostra a imagem
-    // Configurar unidade de medida
-    const unidadeSelect = document.getElementById("unidadeProdutoEditar");
-    const unidadeMedida = produto.unidade_medida;
-
-    // Verificar se a unidade já existe no select
-    const optionExiste = Array.from(unidadeSelect.options).some(
-      (option) => option.value === unidadeMedida
-    );
-
-    // Adicionar a unidade ao select, se não existir
-    if (!optionExiste) {
-      const novaOption = document.createElement("option");
-      novaOption.value = unidadeMedida;
-      novaOption.textContent = unidadeMedida;
-      unidadeSelect.appendChild(novaOption);
-    }
-
-    // Selecionar a unidade do produto
-    unidadeSelect.value = unidadeMedida;
-
-
-    const precoProduto = document.getElementById("precoProduto");
-
-    // Garante que `produto.preco` seja um número válido antes de formatar
-    let preco = produto.preco ? parseFloat(produto.preco) : 0;
-
-    // Define o valor formatado no campo de entrada
-    precoProduto.value = preco.toLocaleString("pt-BR", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    });
-
-
-    // Configurar categorias no select
-    const categoria = categorias.find(
-      (categoria) => categoria.id === produto.idCategoria
-    );
-    const categoriaSelect = document.getElementById("categoriaProdutoEditar");
-    categoriaSelect.innerHTML = ""; // Limpar opções anteriores
-
-    // Adicionar uma opção padrão "Selecione uma categoria"
-    const defaultOption = document.createElement("option");
-    defaultOption.value = "";
-    defaultOption.textContent = "Selecione uma categoria";
-    categoriaSelect.appendChild(defaultOption);
-
-    // Preencher as opções com as categorias disponíveis
-    categorias.forEach((categoria) => {
-      const option = document.createElement("option");
-      option.value = categoria.id;
-      option.textContent = categoria.nome;
-      categoriaSelect.appendChild(option);
-    });
-
-    // Selecionar a categoria correspondente ao produto
-    if (categoria) {
-      categoriaSelect.value = categoria.id;
-    }
-  }
-
-  if (tipo === "Excluir") {
-    document.getElementById("idProdutoExcluir").value = produto;
-  }
-
-  // Exibir o modal correspondente
-  new bootstrap.Modal(document.getElementById(modalId)).show();
-}
-
-function openModalEntrada(id) {
-  const inputProdutoId = document.getElementById("produtoId");
-
-  inputProdutoId.value = id;
-  new bootstrap.Modal(document.getElementById("modalEntrada")).show();
-}
-
-document
-  .getElementById("saida-cadastro")
-  .addEventListener("submit", function (event) {
-    const inputPrecoSaida = document.getElementById("precoSaida");
-
-    inputPrecoSaida.value = preco;
-  });
-
-function openModalSaida(id, preco) {
-  const inputProdutoId = document.getElementById("produtoId2");
-  const inputPrecoSaida = document.getElementById("precoSaida");
-
-  inputProdutoId.value = id;
-
-  // Verifica se o preço é maior que 0, senão define como 0 formatado
-  if (!preco || preco <= 0) {
-    inputPrecoSaida.value = "R$ 0,00";
-  } else {
-    // Formata o valor do preço como moeda (BRL) antes de exibir
-    inputPrecoSaida.value = preco.toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    });
-  }
-
-  // Exibe o modal
-  new bootstrap.Modal(document.getElementById("modalSaida")).show();
-}
-
-let ordemAtual = {
-  coluna: null,
-  crescente: true,
-};
-
-function ordenarTabela(coluna, idSeta) {
-  if (ordemAtual.coluna === coluna) {
-    ordemAtual.crescente = !ordemAtual.crescente;
-  } else {
-    ordemAtual.coluna = coluna;
-    ordemAtual.crescente = true;
-  }
-
-  // Atualizar setas
-  document
-    .querySelectorAll(".seta")
-    .forEach((seta) => (seta.textContent = "⬍"));
-  const setaAtual = document.getElementById(idSeta);
-  setaAtual.textContent = ordemAtual.crescente ? "⬆" : "⬇";
-
-  // Ordenar produtos filtrados
-  produtosOrdenados = [...produtosFiltrados].sort((a, b) => {
-    let valorA = a[coluna];
-    let valorB = b[coluna];
-
-    // Se for uma string, converter para minúscula para comparar corretamente
-    if (typeof valorA === "string") {
-      valorA = valorA.toLowerCase();
-      valorB = valorB.toLowerCase();
-    }
-
-    // Converter para número se for numérico
-    if (!isNaN(valorA) && !isNaN(valorB)) {
-      valorA = Number(valorA);
-      valorB = Number(valorB);
-    }
-
-    // Comparar de acordo com a ordem crescente ou decrescente
-    if (ordemAtual.crescente) {
-      return valorA > valorB ? 1 : valorA < valorB ? -1 : 0;
-    } else {
-      return valorA < valorB ? 1 : valorA > valorB ? -1 : 0;
-    }
-  });
-
-  mostrarPagina(1); // Atualiza a tabela começando na primeira página
-}
-
-document
-  .getElementById("ordenarCodigo")
-  .addEventListener("click", () =>
-    ordenarTabela("codigo_produto", "setaCodigo")
-  );
-document
-  .getElementById("ordenarNome")
-  .addEventListener("click", () => ordenarTabela("nome", "setaNome"));
-document
-  .getElementById("ordenarPreco")
-  .addEventListener("click", () => ordenarTabela("preco", "setaPreco"));
-document
-  .getElementById("ordenarQuantidade")
-  .addEventListener("click", () =>
-    ordenarTabela("quantidade", "setaQuantidade")
-  );
-
-
-
-
-
-
-
-document
-  .getElementById("categoria-cadastro")
-  .addEventListener("submit", async function (event) {
-    event.preventDefault();
-
-    const nome = document.getElementById("nomeCategoriaAdicionar").value;
-    const descricao = document.getElementById(
-      "descricaoCategoriaAdicionar"
-    ).value;
-
-    const novaCategoria = {
-      nome: nome,
-      descricao: descricao,
-    };
-
-    try {
-      const response = await fetch(`${BASE_URL}/addCategoria`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(novaCategoria),
-      });
-
-      if (response.ok) {
-        const categoriaAdicionada = await response.json();
-        categorias.push(categoriaAdicionada); // Adiciona a nova categoria à lista
-        renderizarTabela();
-
-        // Limpa e fecha o modal
-        document.getElementById("nomeCategoriaAdicionar").value = "";
-        document.getElementById("descricaoCategoriaAdicionar").value = "";
-        const modal = bootstrap.Modal.getInstance(
-          document.getElementById("modalAdicionarCategoria")
-        );
-        modal.hide();
-      } else {
-        console.error("Erro ao adicionar categoria");
-      }
-    } catch (error) {
-      console.error("Erro ao adicionar categoria:", error);
-    }
-  });
-
+// Funções de gerenciamento de categorias
 function editarCategoria(id) {
-  const categoria = categorias.find((cat) => cat.id === id);
+  const categoria = categorias.find((c) => c.id === id);
+  if (!categoria) {
+    console.error("Categoria não encontrada");
+    return;
+  }
 
-  document.getElementById("idCategoriaEditar").value = categoria.id;
+  // Preenche os campos do modal de edição
+  document.getElementById("idCategoriaEditar").value = id;
   document.getElementById("nomeCategoriaEditar").value = categoria.nome;
   document.getElementById("descricaoCategoriaEditar").value =
-    categoria.descricao;
+    categoria.descricao || "";
 
-  const modalEditar = new bootstrap.Modal(
+  // Abre o modal de edição
+  const modalEditarCategoria = new bootstrap.Modal(
     document.getElementById("modalEditarCategoria")
   );
-  modalEditar.show();
+  modalEditarCategoria.show();
 }
 
 function excluirCategoria(id) {
-  // Insere o ID da categoria no campo oculto do modal
-  const inputCategoriaId = document.getElementById("idCategoriaExcluir");
-  inputCategoriaId.value = id;
+  const categoria = categorias.find((c) => c.id === id);
+  if (!categoria) {
+    console.error("Categoria não encontrada");
+    return;
+  }
 
-  // Mostra o modal de exclusão
-  new bootstrap.Modal(document.getElementById("modalExcluirCategoria")).show();
+  // Preenche o ID no campo oculto
+  document.getElementById("idCategoriaExcluir").value = id;
+
+  // Abre o modal de exclusão
+  const modalExcluirCategoria = new bootstrap.Modal(
+    document.getElementById("modalExcluirCategoria")
+  );
+  modalExcluirCategoria.show();
 }
 
-window.onload = loadAllData;
+// Funções de gerenciamento de entradas e saídas
+function excluirEntrada(id) {
+  const entrada = entradas.find((e) => e.id === id);
+  if (!entrada) {
+    console.error("Entrada não encontrada");
+    return;
+  }
+
+  document.getElementById("idEntradaExcluir").value = id;
+  const modalExcluirEntrada = new bootstrap.Modal(
+    document.getElementById("modalExcluirEntrada")
+  );
+  modalExcluirEntrada.show();
+}
+
+function excluirSaida(id) {
+  const saida = saidas.find((s) => s.id === id);
+  if (!saida) {
+    console.error("Saída não encontrada");
+    return;
+  }
+
+  document.getElementById("idSaidaExcluir").value = id;
+  const modalExcluirSaida = new bootstrap.Modal(
+    document.getElementById("modalExcluirSaida")
+  );
+  modalExcluirSaida.show();
+}
+
+// Event listeners para os formulários
+document.addEventListener("DOMContentLoaded", function () {
+  // Form de edição de categoria
+  const formEditarCategoria = document.getElementById("categoria-editar");
+  if (formEditarCategoria) {
+    formEditarCategoria.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+
+      try {
+        const response = await $.ajax({
+          type: "POST",
+          url: `${BASE_URL}/categoria-update`,
+          data: formData,
+          processData: false,
+          contentType: false,
+          dataType: "json",
+        });
+
+        // Fecha o modal
+        const modal = bootstrap.Modal.getInstance(
+          document.getElementById("modalEditarCategoria")
+        );
+        if (modal) modal.hide();
+
+        // Atualiza as categorias
+        await fetchCategorias();
+        preencherCategorias(categorias);
+
+        exibirMensagemTemporariaSucesso("Categoria atualizada com sucesso!");
+      } catch (error) {
+        console.error("Erro ao editar categoria:", error);
+        exibirMensagemTemporariaErro("Erro ao atualizar categoria");
+      }
+    });
+  }
+
+  // Form de exclusão de categoria
+  const formExcluirCategoria = document.getElementById("categoria-excluir");
+  if (formExcluirCategoria) {
+    formExcluirCategoria.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const id = document.getElementById("idCategoriaExcluir").value;
+
+      try {
+        const response = await $.ajax({
+          type: "POST",
+          url: `${BASE_URL}/categoria-delete`,
+          data: { id: id },
+          dataType: "json",
+        });
+
+        if (!response.ok) {
+          throw new Error("Erro na requisição");
+        }
+
+        const data = await response.json();
+
+        if (data.type === "error") {
+          throw new Error(data.message || "Erro ao excluir categoria");
+        }
+
+        // Fecha o modal
+        const modal = bootstrap.Modal.getInstance(
+          document.getElementById("modalExcluirCategoria")
+        );
+        if (modal) modal.hide();
+
+        // Atualiza as categorias
+        await fetchCategorias();
+        preencherCategorias(categorias);
+
+        exibirMensagemTemporariaSucesso("Categoria excluída com sucesso!");
+      } catch (error) {
+        console.error("Erro ao excluir categoria:", error);
+        exibirMensagemTemporariaErro("Erro ao excluir categoria");
+      }
+    });
+  }
+
+  // Form de exclusão de entrada
+  const formExcluirEntrada = document.getElementById("entrada-excluir");
+  if (formExcluirEntrada) {
+    formExcluirEntrada.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const id = document.getElementById("idEntradaExcluir").value;
+
+      try {
+        const response = await $.ajax({
+          type: "POST",
+          url: `${BASE_URL}/estoque-ed`,
+          data: { id: id },
+          dataType: "json",
+        });
+
+        if (response.type === "success") {
+          // Fecha apenas o modal de exclusão
+          const modalExcluir = bootstrap.Modal.getInstance(
+            document.getElementById("modalExcluirEntrada")
+          );
+          if (modalExcluir) modalExcluir.hide();
+
+          // Atualiza os dados
+          await atualizarDadosEntrada();
+
+          exibirMensagemTemporariaSucesso(response.message);
+        } else {
+          exibirMensagemTemporariaErro(
+            response.message || "Erro ao excluir entrada"
+          );
+        }
+      } catch (error) {
+        console.error("Erro ao excluir entrada:", error);
+        exibirMensagemTemporariaErro("Erro ao excluir entrada");
+      }
+    });
+  }
+
+  // Form de edição de entrada
+  const formEditarEntrada = document.getElementById("entrada-editar");
+  if (formEditarEntrada) {
+    formEditarEntrada.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+
+      try {
+        const response = await $.ajax({
+          type: "POST",
+          url: `${BASE_URL}/estoque-eu`,
+          data: formData,
+          processData: false,
+          contentType: false,
+          dataType: "json",
+        });
+
+        // Fecha apenas o modal de edição
+        const modalEditar = bootstrap.Modal.getInstance(
+          document.getElementById("modalEditarEntrada")
+        );
+        if (modalEditar) modalEditar.hide();
+
+        // Atualiza os dados
+        await atualizarDadosEntrada();
+
+        exibirMensagemTemporariaSucesso("Entrada atualizada com sucesso!");
+      } catch (error) {
+        console.error("Erro ao editar entrada:", error);
+        exibirMensagemTemporariaErro("Erro ao editar entrada");
+      }
+    });
+  }
+
+  // Form de exclusão de saída
+  const formExcluirSaida = document.getElementById("saida-excluir");
+  if (formExcluirSaida) {
+    formExcluirSaida.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const id = document.getElementById("idSaidaExcluir").value;
+
+      try {
+        const response = await $.ajax({
+          type: "POST",
+          url: `${BASE_URL}/estoque-sd`,
+          data: { id: id },
+          dataType: "json",
+        });
+
+        if (response.type === "success") {
+          // Fecha apenas o modal de exclusão
+          const modalExcluir = bootstrap.Modal.getInstance(
+            document.getElementById("modalExcluirSaida")
+          );
+          if (modalExcluir) modalExcluir.hide();
+
+          // Atualiza os dados
+          await atualizarDadosSaida();
+
+          exibirMensagemTemporariaSucesso(response.message);
+        } else {
+          exibirMensagemTemporariaErro(
+            response.message || "Erro ao excluir saída"
+          );
+        }
+      } catch (error) {
+        console.error("Erro ao excluir saída:", error);
+        exibirMensagemTemporariaErro("Erro ao excluir saída");
+      }
+    });
+  }
+
+  // Form de edição de saída
+  const formEditarSaida = document.getElementById("saida-editar");
+  if (formEditarSaida) {
+    formEditarSaida.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+
+      try {
+        const response = await $.ajax({
+          type: "POST",
+          url: `${BASE_URL}/estoque-su`,
+          data: formData,
+          processData: false,
+          contentType: false,
+          dataType: "json",
+        });
+
+        // Fecha apenas o modal de edição
+        const modalEditar = bootstrap.Modal.getInstance(
+          document.getElementById("modalEditarSaida")
+        );
+        if (modalEditar) modalEditar.hide();
+
+        // Atualiza os dados
+        await atualizarDadosSaida();
+
+        exibirMensagemTemporariaSucesso("Saída atualizada com sucesso!");
+      } catch (error) {
+        console.error("Erro ao editar saída:", error);
+        exibirMensagemTemporariaErro("Erro ao editar saída");
+      }
+    });
+  }
+});
+
+// Funções para calcular quantidade do produto
+function calcularQuantidadeProduto(produto) {
+  if (!produto) return 0;
+
+  let quantidadeTotal = 0;
+
+  // Soma todas as entradas do produto
+  entradas.forEach((entrada) => {
+    if (entrada.produto_id === produto.id && entrada.quantidade) {
+      quantidadeTotal += parseFloat(entrada.quantidade) || 0;
+    }
+  });
+
+  // Subtrai todas as saídas do produto
+  saidas.forEach((saida) => {
+    if (saida.produto_id === produto.id && saida.quantidade) {
+      quantidadeTotal -= parseFloat(saida.quantidade) || 0;
+    }
+  });
+
+  return parseFloat(quantidadeTotal.toFixed(2));
+}
+
+// Funções para atualizar dados
+async function atualizarDadosEntrada() {
+  try {
+    // Busca dados atualizados
+    const [entradasResponse, produtosResponse] = await Promise.all([
+      fetch(`${BASE_URL}/getEntradas`),
+      fetch(`${BASE_URL}/getProdutos`),
+    ]);
+
+    if (!entradasResponse.ok || !produtosResponse.ok) {
+      throw new Error("Erro ao buscar dados");
+    }
+
+    // Atualiza os dados globais
+    entradas = await entradasResponse.json();
+    produtos = await produtosResponse.json();
+
+    // Atualiza quantidades dos produtos
+    produtos.forEach((produto) => {
+      produto.quantidade = calcularQuantidadeProduto(produto);
+    });
+
+    // Atualiza a lista filtrada
+    entradasFiltradas = [...entradas];
+
+    // Atualiza as visualizações
+    mostrarPaginaEntradas(paginaAtualEntradas);
+    mostrarPagina(paginaAtual);
+  } catch (error) {
+    console.error("Erro ao atualizar dados de entrada:", error);
+    exibirMensagemTemporariaErro("Erro ao atualizar dados");
+  }
+}
+
+async function atualizarDadosSaida() {
+  try {
+    // Busca dados atualizados
+    const [saidasResponse, produtosResponse] = await Promise.all([
+      fetch(`${BASE_URL}/getSaidas`),
+      fetch(`${BASE_URL}/getProdutos`),
+    ]);
+
+    if (!saidasResponse.ok || !produtosResponse.ok) {
+      throw new Error("Erro ao buscar dados");
+    }
+
+    // Atualiza os dados globais
+    saidas = await saidasResponse.json();
+    produtos = await produtosResponse.json();
+
+    // Atualiza quantidades dos produtos
+    produtos.forEach((produto) => {
+      produto.quantidade = calcularQuantidadeProduto(produto);
+    });
+
+    // Atualiza a lista filtrada
+    saidasFiltradas = [...saidas];
+
+    // Atualiza as visualizações
+    mostrarPaginaSaidas(paginaAtualSaidas);
+    mostrarPagina(paginaAtual);
+  } catch (error) {
+    console.error("Erro ao atualizar dados de saída:", error);
+    exibirMensagemTemporariaErro("Erro ao atualizar dados");
+  }
+}
+
+// Form de exclusão de produto
+const formExcluirProduto = document.getElementById("produto-excluir");
+if (formExcluirProduto) {
+  formExcluirProduto.addEventListener("submit", async function (e) {
+    e.preventDefault();
+    const id = document.getElementById("idProdutoExcluir").value;
+
+    try {
+      // Primeiro exclui todas as entradas e saídas relacionadas
+      const entradasDoProduto = entradas.filter((e) => e.produto_id === id);
+      const saidasDoProduto = saidas.filter((s) => s.produto_id === id);
+
+      // Exclui entradas
+      for (const entrada of entradasDoProduto) {
+        await fetch(`${BASE_URL}/estoque-ed`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: `id=${entrada.id}`,
+        });
+      }
+
+      // Exclui saídas
+      for (const saida of saidasDoProduto) {
+        await fetch(`${BASE_URL}/estoque-sd`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: `id=${saida.id}`,
+        });
+      }
+
+      // Agora exclui o produto
+      const response = await fetch(`${BASE_URL}/produto-delete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: `id=${id}`,
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro na requisição");
+      }
+
+      const data = await response.json();
+
+      if (data.type === "error") {
+        throw new Error(data.message || "Erro ao excluir produto");
+      }
+
+      // Fecha o modal de exclusão
+      const modalExcluir = bootstrap.Modal.getInstance(
+        document.getElementById("modalExcluirProduto")
+      );
+      if (modalExcluir) modalExcluir.hide();
+
+      // Atualiza todos os dados relacionados
+      await Promise.all([fetchProdutos(), fetchEntradas(), fetchSaidas()]);
+
+      // Atualiza as listas filtradas
+      produtosFiltrados = [...produtos];
+      entradasFiltradas = [...entradas];
+      saidasFiltradas = [...saidas];
+
+      // Atualiza todas as visualizações
+      mostrarPagina(paginaAtual);
+      mostrarPaginaEntradas(paginaAtualEntradas);
+      mostrarPaginaSaidas(paginaAtualSaidas);
+
+      exibirMensagemTemporariaSucesso(
+        "Produto e seus registros excluídos com sucesso!"
+      );
+    } catch (error) {
+      console.error("Erro ao excluir produto:", error);
+      exibirMensagemTemporariaErro(error.message || "Erro ao excluir produto");
+    }
+  });
+}
+
+// Funções para mostrar páginas
+
+// Função para remover backdrops manualmente
+function removerBackdrops() {
+  const backdrops = document.querySelectorAll(".modal-backdrop");
+  backdrops.forEach((backdrop) => backdrop.remove());
+  document.body.classList.remove("modal-open");
+  document.body.style.overflow = "";
+  document.body.style.paddingRight = "";
+}
+
+// Função para fechar todos os modais
+function fecharTodosModais() {
+  const modais = [
+    "entradasModal",
+    "saidasModal",
+    "modalEditarEntrada",
+    "modalEditarSaida",
+    "modalExcluirEntrada",
+    "modalExcluirSaida",
+    "modalCadastrarEntrada",
+    "modalCadastrarSaida",
+  ];
+
+  modais.forEach((id) => {
+    const modal = bootstrap.Modal.getInstance(document.getElementById(id));
+    if (modal) {
+      modal.hide();
+    }
+  });
+
+  // Remove qualquer backdrop que possa ter ficado
+  setTimeout(removerBackdrops, 150);
+}
+
+// Adiciona listeners para todos os modais
+document.addEventListener("DOMContentLoaded", function () {
+  const modais = [
+    "entradasModal",
+    "saidasModal",
+    "modalEditarEntrada",
+    "modalEditarSaida",
+    "modalExcluirEntrada",
+    "modalExcluirSaida",
+    "modalCadastrarEntrada",
+    "modalCadastrarSaida",
+  ];
+
+  modais.forEach((id) => {
+    const elemento = document.getElementById(id);
+    if (elemento) {
+      elemento.addEventListener("hidden.bs.modal", function () {
+        setTimeout(removerBackdrops, 150);
+      });
+
+      elemento.addEventListener("show.bs.modal", function () {
+        // Remove qualquer backdrop existente antes de mostrar o novo modal
+        removerBackdrops();
+      });
+    }
+  });
+});
+
+// Função para preencher a lista de fornecedores no datalist
+function preencherSugestoesFornecedores() {
+  const datalist = document.getElementById('listaFornecedores');
+  if (!datalist) return;
+
+  // Limpar lista atual
+  datalist.innerHTML = '';
+
+  // Adicionar cada fornecedor como uma opção
+  fornecedores.forEach(fornecedor => {
+    const option = document.createElement('option');
+    option.value = fornecedor.nome;
+    option.dataset.id = fornecedor.id;
+    datalist.appendChild(option);
+  });
+}
+
+// Adicionar evento para quando um fornecedor é selecionado
+document.addEventListener('DOMContentLoaded', function() {
+  const inputFornecedor = document.getElementById('entradaFornecedor');
+  if (inputFornecedor) {
+    inputFornecedor.addEventListener('input', function(e) {
+      const fornecedor = fornecedores.find(f => f.nome === this.value);
+      if (fornecedor) {
+        // Se encontrou o fornecedor, pode armazenar o ID em um campo hidden
+        const idFornecedorInput = inputFornecedor.parentNode.querySelector('#idFornecedor') || document.createElement('input');
+        idFornecedorInput.type = 'hidden';
+        idFornecedorInput.id = 'idFornecedor';
+        idFornecedorInput.name = 'idFornecedor';
+        idFornecedorInput.value = fornecedor.id;
+        this.parentNode.appendChild(idFornecedorInput);
+      }
+    });
+  }
+});
+
+// Atualizar a função fetchFornecedores para preencher as sugestões após carregar
+async function fetchFornecedores() {
+  try {
+    const response = await fetch(`${BASE_URL}/getFornecedores`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    console.log('Dados brutos dos fornecedores:', data);
+    
+    fornecedores = Array.isArray(data) ? data : [];
+    fornecedoresFiltrados = [...fornecedores];
+    
+    // Preencher as sugestões após carregar os fornecedores
+    preencherSugestoesFornecedores();
+    
+    console.log('Fornecedores processados:', {
+      total: fornecedores.length,
+      primeiro: fornecedores[0],
+      estrutura: fornecedores.length > 0 ? {
+        id: typeof fornecedores[0].id,
+        nome: typeof fornecedores[0].nome
+      } : 'Sem fornecedores'
+    });
+  } catch (error) {
+    console.error('Erro ao carregar fornecedores:', error);
+    fornecedores = [];
+    fornecedoresFiltrados = [];
+  }
+}
+
+// Atualizar a função editarEntrada para preencher o fornecedor
+function editarEntrada(id) {
+  const entrada = entradas.find(e => e.id === id);
+  if (!entrada) return;
+
+  const fornecedor = fornecedores.find(f => parseInt(f.id) === parseInt(entrada.idFornecedores));
+  const produto = produtos.find(p => parseInt(p.id) === parseInt(entrada.idProdutos));
+
+  document.getElementById('idEntradaEditar').value = entrada.id;
+  document.getElementById('entradaFornecedor').value = fornecedor ? fornecedor.nome : '';
+  document.getElementById('entradaProduto').value = produto ? produto.nome : '';
+  document.getElementById('entradaQuantidade').value = entrada.quantidade;
+  document.getElementById('entradaPreco').value = formatarPrecoParaInput(entrada.preco);
+
+  // Adicionar o ID do fornecedor em um campo hidden
+  const idFornecedorInput = document.getElementById('idFornecedor') || document.createElement('input');
+  idFornecedorInput.type = 'hidden';
+  idFornecedorInput.id = 'idFornecedor';
+  idFornecedorInput.name = 'idFornecedor';
+  idFornecedorInput.value = entrada.idFornecedores;
+  document.getElementById('entradaFornecedor').parentNode.appendChild(idFornecedorInput);
+
+  const modalEditarEntrada = new bootstrap.Modal(document.getElementById('modalEditarEntrada'));
+  modalEditarEntrada.show();
+}
+
+// Função para mostrar sugestões de fornecedores
+function mostrarSugestoesFornecedores(input) {
+  const termo = input.value.toLowerCase();
+  const sugestoesDiv = input.parentNode.querySelector('.sugestoes-fornecedores');
+  
+  // Filtrar fornecedores baseado no termo de busca
+  const sugestoesFiltradas = fornecedores.filter(f => 
+    f.nome.toLowerCase().includes(termo)
+  );
+  
+  // Limpar sugestões anteriores
+  sugestoesDiv.innerHTML = '';
+  
+  if (sugestoesFiltradas.length > 0 && termo.length > 0) {
+    // Criar elementos para cada sugestão
+    sugestoesFiltradas.forEach(fornecedor => {
+      const div = document.createElement('div');
+      div.className = 'sugestao-item p-2 cursor-pointer hover-bg-light';
+      div.style.cursor = 'pointer';
+      div.style.padding = '8px';
+      div.innerHTML = fornecedor.nome;
+      
+      // Adicionar hover effect
+      div.addEventListener('mouseover', () => {
+        div.style.backgroundColor = '#f8f9fa';
+      });
+      div.addEventListener('mouseout', () => {
+        div.style.backgroundColor = 'white';
+      });
+      
+      // Ao clicar na sugestão
+      div.addEventListener('click', () => {
+        input.value = fornecedor.nome;
+        const idFornecedorInput = input.parentNode.querySelector('#idFornecedor');
+        if (idFornecedorInput) {
+          idFornecedorInput.value = fornecedor.id;
+        }
+        sugestoesDiv.style.display = 'none';
+      });
+      
+      sugestoesDiv.appendChild(div);
+    });
+    
+    // Mostrar o dropdown
+    sugestoesDiv.style.display = 'block';
+  } else {
+    sugestoesDiv.style.display = 'none';
+  }
+}
+
+// Configurar eventos para os inputs de fornecedor
+document.addEventListener('DOMContentLoaded', function() {
+  const inputsFornecedor = document.querySelectorAll('#entradaFornecedor');
+  
+  inputsFornecedor.forEach(input => {
+    // Ao digitar no input
+    input.addEventListener('input', () => {
+      mostrarSugestoesFornecedores(input);
+    });
+    
+    // Ao focar no input
+    input.addEventListener('focus', () => {
+      if (input.value.length > 0) {
+        mostrarSugestoesFornecedores(input);
+      }
+    });
+    
+    // Fechar sugestões ao clicar fora
+    document.addEventListener('click', (e) => {
+      if (!input.parentNode.contains(e.target)) {
+        const sugestoesDiv = input.parentNode.querySelector('.sugestoes-fornecedores');
+        if (sugestoesDiv) {
+          sugestoesDiv.style.display = 'none';
+        }
+      }
+    });
+  });
+});
