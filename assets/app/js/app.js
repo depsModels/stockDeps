@@ -1,7 +1,15 @@
 const BASE_URL = '/stockDeps/app';
 const itensPorPagina = 8;
 const maxBotoesPaginacao = 5; // Limite de botões de página exibidos
-
+// Adicione este código temporariamente para medir:
+console.time('operacao');
+// sua operação aqui (ex: busca)
+console.timeEnd('operacao');// Add this to your code where you want to measure:
+for(let i = 0; i < 10; i++) {
+    console.time('operacao');
+    // your operation here
+    console.timeEnd('operacao');
+}
 let produtos = [];
 let clientes = [];
 let fornecedores = [];
