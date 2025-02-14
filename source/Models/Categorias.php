@@ -77,7 +77,7 @@ class Categorias
 
     public function selectAll ()
     {
-        $query = "SELECT * FROM Categorias";
+        $query = "SELECT * FROM categorias";
         $stmt = Connect::getInstance()->prepare($query);
         $stmt->execute();
 

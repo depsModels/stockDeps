@@ -1,4 +1,4 @@
-const BASE_URL = '/stockDeps';
+const BASE_URL = 'https://stockdeps.com';
 
 // Valida login
 const form_login = $("#form-login");
@@ -36,5 +36,3 @@ form_login.on("submit", function (e) {
         }
     });
 });
-
-

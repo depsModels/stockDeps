@@ -12,6 +12,9 @@
   <!-- Ícone do site -->
   <link rel="icon" href="<?= url('assets/web/images/logos/logo-without-background.png') ?>" type="image/png" />
   <title>Stock Deps</title>
+  
+  <!-- Scripts globais -->
+  <script src="<?= url('assets/app/js/config.js') ?>"></script>
 </head>
 
 <body>
@@ -51,7 +54,9 @@
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/inputmask/5.0.8/jquery.inputmask.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="<?= url('assets/app/js/utils.js') ?>"></script>
   <script src="<?= url('assets/app/js/app.js') ?>"></script>
+  <script src="<?= url('assets/app/js/home.js') ?>"></script>
   <script src="<?= url('assets/app/js/formsUpdate.js') ?>"></script>
 </body>
 </html>

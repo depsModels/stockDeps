@@ -1,29 +1,27 @@
-// Constants
-const BASE_URL = window.location.origin + "/stockDeps/app";
-const CONFIG = {
-  itensPorPagina: 8,
-  maxBotoesPaginacao: 5,
-  messageTimeout: 2500,
-  animationDuration: 400,
-};
-
 // State variables
-let produtos = [];
 let produtosOriginais = [];
-let clientes = [];
-let fornecedores = [];
-let entradas = [];
-let saidas = [];
-let categorias = [];
-
 let paginaAtualEntradas = 1;
 let paginaAtualSaidas = 1;
 let paginaAtual = 1;
-
 let entradasFiltradas = [];
-let saidasFiltradas = [];
-let produtosFiltrados = [];
-let produtosOrdenados = [];
+
+// Performance tracking utilities
+const performanceMetrics = {
+  measurements: {},
+  startMeasure(label) {
+    this.measurements[label] = performance.now();
+  },
+  endMeasure(label) {
+    if (this.measurements[label]) {
+      const duration = performance.now() - this.measurements[label];
+      console.log(`${label}: ${duration.toFixed(2)}ms`);
+      delete this.measurements[label];
+    }
+  },
+  clear() {
+    this.measurements = {};
+  }
+};
 
 // Cache for performance optimization
 const cache = {
@@ -39,22 +37,16 @@ const cache = {
   },
 };
 
-// Performance tracking utilities
-const performanceMetrics = {
-  measurements: {},
-  startMeasure(label) {
-    this.measurements[label] = performance.now();
-  },
-  endMeasure(label) {
-    if (this.measurements[label]) {
-      const duration = performance.now() - this.measurements[label];
-      console.log(`${label}: ${duration.toFixed(2)}ms`);
-      delete this.measurements[label];
-      return duration;
-    }
-    return 0;
-  },
-};
+// State variables
+let produtos = [];
+let clientes = [];
+let fornecedores = [];
+let entradas = [];
+let saidas = [];
+let categorias = [];
+
+let produtosFiltrados = [];
+let produtosOrdenados = [];
 
 // Message display functions
 function exibirMensagem(mensagem, tipo = "info") {
@@ -72,7 +64,7 @@ function exibirMensagem(mensagem, tipo = "info") {
   // Remove after timeout
   setTimeout(() => {
     messageDiv.remove();
-  }, CONFIG.messageTimeout);
+  }, 3000);
 }
 
 function exibirMensagemTemporariaSucesso(msg) {
@@ -88,22 +80,20 @@ function exibirMensagemTemporariaErro(msg) {
 }
 
 // Initialize data loading
-document.addEventListener("DOMContentLoaded", async () => {
-  try {
-    await Promise.all([
-      fetchProdutos(),
-      fetchCategorias(),
-      fetchClientes(),
-      fetchFornecedores(),
-      fetchEntradas(),
-      fetchSaidas(),
-    ]);
-
-    // Set up event listeners after data is loaded
-    setupEventListeners();
-  } catch (error) {
-    console.error("Erro ao carregar dados:", error);
-  }
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        await Promise.all([
+            fetchProdutos(),
+            fetchEntradas(),
+            fetchSaidas(),
+            fetchCategorias(),
+            fetchClientes(),
+            fetchFornecedores()
+        ]);
+        renderizarTabela();
+    } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+    }
 });
 
 function setupEventListeners() {
@@ -427,8 +417,8 @@ function mostrarPaginaEntradas(pagina) {
   performanceMetrics.startMeasure("mostrarPaginaEntradas");
   console.log("Iniciando mostrarPaginaEntradas:", { pagina });
 
-  const inicio = (pagina - 1) * CONFIG.itensPorPagina;
-  const fim = inicio + CONFIG.itensPorPagina;
+  const inicio = (pagina - 1) * 10;
+  const fim = inicio + 10;
   const tbody = document.getElementById("corpoTabelaEntradas");
 
   if (!tbody) {
@@ -595,7 +585,7 @@ function configurarPaginacao(
   seletorPaginacao,
   paginaAtual
 ) {
-  const totalPaginas = Math.ceil(totalItens / CONFIG.itensPorPagina);
+  const totalPaginas = Math.ceil(totalItens / 10);
   const paginacaoContainer = document.querySelector(seletorPaginacao);
   paginacaoContainer.innerHTML = ""; // Limpa a navegação
 
@@ -603,11 +593,11 @@ function configurarPaginacao(
 
   const paginaInicial = Math.max(
     1,
-    paginaAtual - Math.floor(CONFIG.maxBotoesPaginacao / 2)
+    paginaAtual - Math.floor(5 / 2)
   );
   const paginaFinal = Math.min(
     totalPaginas,
-    paginaInicial + CONFIG.maxBotoesPaginacao - 1
+    paginaInicial + 5 - 1
   );
 
   // Botão "Anterior"
@@ -805,8 +795,8 @@ function mostrarPagina(pagina) {
     return;
   }
 
-  const inicio = (pagina - 1) * CONFIG.itensPorPagina;
-  const fim = inicio + CONFIG.itensPorPagina;
+  const inicio = (pagina - 1) * 10;
+  const fim = inicio + 10;
   const produtosPagina = produtosOrdenados.slice(inicio, fim);
 
   let html;
@@ -841,17 +831,17 @@ function mostrarPagina(pagina) {
 }
 
 function atualizarPaginacao(totalProdutos, paginaAtual) {
-  const totalPaginas = Math.ceil(totalProdutos / CONFIG.itensPorPagina);
+  const totalPaginas = Math.ceil(totalProdutos / 10);
   const pagination = document.getElementById("pagination");
   pagination.innerHTML = ""; // Limpa o container de paginação
 
   const paginaInicial = Math.max(
     1,
-    paginaAtual - Math.floor(CONFIG.maxBotoesPaginacao / 2)
+    paginaAtual - Math.floor(5 / 2)
   );
   const paginaFinal = Math.min(
     totalPaginas,
-    paginaInicial + CONFIG.maxBotoesPaginacao - 1
+    paginaInicial + 5 - 1
   );
 
   // Botão "Anterior"
@@ -1298,7 +1288,15 @@ function editarProduto(id) {
   document.getElementById('codigoProdutoEditar').value = produto.codigo_produto || '';
   document.getElementById('nomeProduto').value = produto.nome || '';
   document.getElementById('descricaoProduto').value = produto.descricao || '';
-  document.getElementById('precoProduto').value = formatarPrecoParaExibicao(produto.preco);
+  
+  // Formatar e preencher o preço
+  const precoInput = document.getElementById('precoProduto');
+  if (precoInput) {
+    const precoFormatado = formatarPrecoParaExibicao(produto.preco);
+    console.log('Preço original:', produto.preco);
+    console.log('Preço formatado:', precoFormatado);
+    precoInput.value = precoFormatado;
+  }
 
   // Preencher categoria
   const selectCategoria = document.getElementById('categoriaProdutoEditar');
@@ -1874,7 +1872,9 @@ function fecharTodosModais() {
   ];
 
   modais.forEach((id) => {
-    const modal = bootstrap.Modal.getInstance(document.getElementById(id));
+    const modal = bootstrap.Modal.getInstance(
+      document.getElementById(id)
+    );
     if (modal) {
       modal.hide();
     }
@@ -2129,7 +2129,7 @@ function editarProduto(id) {
   
   console.log('Dados do produto:', produto);
 
-  // Preencher campos básicos
+  // Preencher campos do formulário
   document.getElementById('idProdutoUpdate').value = produto.id;
   document.getElementById('codigoProdutoEditar').value = produto.codigo_produto || '';
   document.getElementById('nomeProduto').value = produto.nome || '';
@@ -2246,8 +2246,8 @@ function confirmarExclusaoSaida() {
 
 // Função para mostrar a página de saídas
 function mostrarPaginaSaidas(pagina) {
-    const inicio = (pagina - 1) * CONFIG.itensPorPagina;
-    const fim = inicio + CONFIG.itensPorPagina;
+    const inicio = (pagina - 1) * 10;
+    const fim = inicio + 10;
     const tbody = document.getElementById('corpoTabelaSaidas');
 
     if (!tbody) {
@@ -2318,7 +2318,7 @@ function editarSaida(id) {
     // Preencher preços
     const precoAtual = document.getElementById('saidaPrecoAtual');
     const precoNovo = document.getElementById('saidaPreco');
-    
+
     if (precoAtual) {
         precoAtual.value = formatarPrecoParaExibicao(saida.preco);
     }

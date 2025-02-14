@@ -19,12 +19,68 @@ class App
 
     public function __construct()
     {
+        if (!session_id()) {
+            session_start();
+        }
+
+        $this->checkInstallation();
+
+        $site = CONF_URL_BASE;
+
+        if (!CONF_SSL) {
+            $site = str_replace("https://", "http://", $site);
+        }
+
         $this->view = new Engine(CONF_VIEW_APP, 'php');
 
         $session = new Session();
         if (!$session->has("user")) {
-            header("Location: /stockDeps");
+            // Verifica se é uma requisição da API
+            if ($this->isApiRequest()) {
+                header('Content-Type: application/json');
+                http_response_code(401);
+                echo json_encode(["error" => "Sessão expirada", "redirect" => str_replace("/app", "", CONF_URL_BASE)]);
+                exit();
+            }
+            
+            // Se não for API, redireciona normalmente
+            header("Location: " . str_replace("/app", "", CONF_URL_BASE));
             exit();
+        }
+    }
+
+    /**
+     * Verifica se é uma requisição da API
+     * @return bool
+     */
+    private function isApiRequest(): bool
+    {
+        $apiEndpoints = [
+            '/getProdutos',
+            '/getEntradas',
+            '/getSaidas',
+            '/getCategorias',
+            '/getClientes',
+            '/getFornecedores'
+        ];
+        
+        $requestUri = $_SERVER['REQUEST_URI'];
+        foreach ($apiEndpoints as $endpoint) {
+            if (strpos($requestUri, $endpoint) !== false) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Check if the application is properly installed
+     * @return void
+     */
+    private function checkInstallation(): void
+    {
+        if (!file_exists(\CONF_SITE_PATH . "/index.php")) {
+            die("O sistema não está instalado corretamente. Por favor, verifique a instalação.");
         }
     }
 
@@ -132,7 +188,7 @@ class App
             $image = new Image("uploads", "images", true);
 
             if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-                $site = "http://127.0.0.1/stockDeps/";
+                $site = "https://www.stockDeps.com/";
                 $upload = $image->upload($_FILES['image'], $data['nome']);
                 $link = $site . $upload;
             } else {
@@ -242,7 +298,7 @@ class App
     
             // Processamento da imagem
             if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
-                $site = "http://127.0.0.1/stockDeps/";
+                $site = "https://www.stockDeps.com/";
                 $fileExtension = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
                 $uniqueFileName = $data['nome'] . "_" . time() . "." . $fileExtension;
                 $upload = $image->upload($_FILES['image'], $uniqueFileName);
@@ -1277,7 +1333,7 @@ class App
         }
 
     </style>
-
+    
     </html>");
 
         // (Optional) Setup the paper size and orientation

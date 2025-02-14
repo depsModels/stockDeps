@@ -1,80 +1,43 @@
-// Use BASE_URL from app.js
+// Use as configurações globais
 
-function handleEditFormSubmission(formSelector, url, callback) {
-    const form = $(formSelector);
-    form.off("submit").on("submit", function (e) {
+async function handleEditFormSubmission(formSelector, url, callback) {
+    const form = document.querySelector(formSelector);
+    if (!form) return;
+
+    form.addEventListener("submit", async function (e) {
         e.preventDefault();
+        
+        try {
+            const formData = new FormData(this);
+            const response = await fetch(url, {
+                method: "POST",
+                body: formData,
+                ...DEFAULT_FETCH_OPTIONS
+            });
 
-        const formData = new FormData(this);
-        const modalElement = $(this).closest('.modal')[0];
-        const modal = modalElement ? bootstrap.Modal.getInstance(modalElement) : null;
-
-        // Converter FormData para objeto para debug
-        const formDataObj = {};
-        formData.forEach((value, key) => {
-            formDataObj[key] = value;
-        });
-        console.log('Dados sendo enviados:', formDataObj);
-
-        $.ajax({
-            type: "POST",
-            url: url,
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function (response) {
-                console.log('Resposta recebida:', response);
-                
-                try {
-                    // Se a resposta for string, tentar fazer parse
-                    if (typeof response === 'string') {
-                        response = JSON.parse(response);
-                    }
-
-                    if (response.type === 'error') {
-                        exibirMensagemTemporariaErro(response.message || "Erro ao processar a solicitação.");
-                        return;
-                    }
-
-                    if (response.type === 'success') {
-                        if (modal) {
-                            modal.hide();
-                        }
-                        
-                        // Fechar também o modal principal se estiver aberto
-                        const entradasModal = bootstrap.Modal.getInstance(document.getElementById('entradasModal'));
-                        const saidasModal = bootstrap.Modal.getInstance(document.getElementById('saidasModal'));
-                        
-                        if (entradasModal) entradasModal.hide();
-                        if (saidasModal) saidasModal.hide();
-                        
-                        if (callback) callback(response);
-                        exibirMensagemTemporariaSucesso(response.message || "Operação realizada com sucesso!");
-                    }
-                } catch (e) {
-                    console.error('Erro ao processar resposta:', e);
-                    exibirMensagemTemporariaErro("Erro ao processar a resposta do servidor.");
-                }
-            },
-            error: function (xhr, status, error) {
-                console.error("Erro no AJAX:", error);
-                console.error("Status:", status);
-                console.error("Resposta do servidor:", xhr.responseText);
-                
-                let mensagemErro = "Erro ao processar a solicitação.";
-                
-                try {
-                    if (xhr.responseText) {
-                        const response = JSON.parse(xhr.responseText);
-                        mensagemErro = response.message || mensagemErro;
-                    }
-                } catch (e) {
-                    console.error('Erro ao processar mensagem de erro:', e);
-                }
-                
-                exibirMensagemTemporariaErro(mensagemErro);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-        });
+
+            const data = await response.json();
+            
+            if (data.error) {
+                exibirMensagemTemporariaErro(data.error);
+                return;
+            }
+
+            exibirMensagemTemporariaSucesso("Atualizado com sucesso!");
+            if (callback) callback(data);
+            
+            const modal = bootstrap.Modal.getInstance(document.querySelector(formSelector).closest('.modal'));
+            if (modal) {
+                modal.hide();
+            }
+            
+        } catch (error) {
+            handleApiError(error, url);
+            exibirMensagemTemporariaErro("Erro ao atualizar. Tente novamente.");
+        }
     });
 }
 

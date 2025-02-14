@@ -1,7 +1,6 @@
-const BASE_URL = '/stockDeps/app';
-
-const itensPorPaginaFornecedores = 7;
-const maxBotoesPaginacaoFornecedores = 5;
+// Configurações de paginação
+const itensPorPaginaFornecedores = CONFIG.itensPorPagina;
+const maxBotoesPaginacaoFornecedores = CONFIG.maxBotoesPaginacao;
 let paginaAtualFornecedores = 1;
 
 let fornecedores = [];
@@ -9,28 +8,59 @@ let fornecedoresFiltrados = [];
 let ordemAtualFornecedores = { coluna: null, crescente: true };
 
 async function fetchProdutos() {
-    const response = await fetch(`${BASE_URL}/getProdutos`);
-    produtos = await response.json();
+    try {
+        const response = await fetch(`${BASE_URL}/getProdutos`, DEFAULT_FETCH_OPTIONS);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        produtos = await response.json();
+    } catch (error) {
+        handleApiError(error, 'getProdutos');
+    }
 }
 
 async function fetchCategorias() {
-    const response = await fetch(`${BASE_URL}/getCategorias`);
-    categorias = await response.json();
+    try {
+        const response = await fetch(`${BASE_URL}/getCategorias`, DEFAULT_FETCH_OPTIONS);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        categorias = await response.json();
+    } catch (error) {
+        handleApiError(error, 'getCategorias');
+    }
 }
 
 async function fetchClientes() {
-    const response = await fetch(`${BASE_URL}/getClientes`);
-    clientes = await response.json();
+    try {
+        const response = await fetch(`${BASE_URL}/getClientes`, DEFAULT_FETCH_OPTIONS);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        clientes = await response.json();
+    } catch (error) {
+        handleApiError(error, 'getClientes');
+    }
 }
+
 async function fetchSaidas() {
-    const response = await fetch(`${BASE_URL}/getSaidas`);
-    saidas = await response.json(); // Preenche a variável global saídas
+    try {
+        const response = await fetch(`${BASE_URL}/getSaidas`, DEFAULT_FETCH_OPTIONS);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        saidas = await response.json();
+    } catch (error) {
+        handleApiError(error, 'getSaidas');
+    }
 }
+
 async function fetchFornecedores() {
     try {
-        const response = await fetch(`${BASE_URL}/getFornecedores`);
-        if (!response.ok) throw new Error(`Erro ao buscar fornecedores: ${response.statusText}`);
-
+        const response = await fetch(`${BASE_URL}/getFornecedores`, DEFAULT_FETCH_OPTIONS);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         fornecedores = await response.json();
         fornecedoresFiltrados = [...fornecedores];
         aplicarOrdenacaoFornecedores();
@@ -45,8 +75,15 @@ async function fetchFornecedores() {
 }
 
 async function fetchEntradas() {
-    const response = await fetch(`${BASE_URL}/getEntradas`);
-    entradas = await response.json(); // Preenche a variável global saídas
+    try {
+        const response = await fetch(`${BASE_URL}/getEntradas`, DEFAULT_FETCH_OPTIONS);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        entradas = await response.json();
+    } catch (error) {
+        handleApiError(error, 'getEntradas');
+    }
 }
 
 function preencherTabelaFornecedores(fornecedoresPaginados) {

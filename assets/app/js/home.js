@@ -1,76 +1,68 @@
-const BASE_URL = '/stockDeps/app';
-
-let produtos = [];
-let entradas = [];
-let saidas = [];
-let categorias = [];
-let clientes = [];
-let fornecedores = [];
-let chartCategorias = null;
+// Funções específicas da página inicial
 
 async function fetchProdutos() {
-  const response = await fetch(`${BASE_URL}/getProdutos`);
-  produtos = await response.json();
-}
-
-async function fetchEntradas() {
-  const response = await fetch(`${BASE_URL}/getEntradas`);
-  entradas = await response.json();  // Defina a variável `entradas` no escopo global
-  console.log(entradas);
-  calcularLucro(entradas, saidas);
-}
-
-async function fetchSaidas() {
-  const response = await fetch(`${BASE_URL}/getSaidas`);
-  saidas = await response.json();
-  calcularLucro(entradas, saidas);
-}
-
-async function fetchCategorias() {
-  const response = await fetch(`${BASE_URL}/getCategorias`);
-  categorias = await response.json();
-  atualizarGraficoCategorias(categorias);
-}
-
-async function fetchClientes() {
-  const response = await fetch(`${BASE_URL}/getClientes`);
-  clientes = await response.json();
-  preencherClientes(clientes);
-}
-
-async function fetchFornecedores() {
-  const response = await fetch(`${BASE_URL}/getFornecedores`);
-  fornecedores = await response.json();
-  preencherFornecedores(fornecedores);
-}
-
-
-async function loadDashboardData() {
   try {
-    await Promise.all([
-      fetchAndUpdateData('produtos', atualizarProdutos),
-      fetchAndUpdateData('entradas', atualizarEntradas),
-      fetchAndUpdateData('saidas', atualizarSaidas),
-      fetchAndUpdateData('clientes', atualizarClientes),
-      fetchAndUpdateData('fornecedores', atualizarFornecedores),
-      fetchCategorias(),
-    ]);
-    atualizarCaixas();
-    atualizarProdutosMaisVendidos();
-    atualizarGraficoCategorias(categorias);
+    const response = await fetch(`${window.location.origin + '/app'}/getProdutos`);
+    const data = await response.json();
+    produtos = data;
+    return data;
   } catch (error) {
-    console.error('Erro ao carregar os dados do dashboard:', error);
+    console.error('Erro ao buscar produtos:', error);
   }
 }
 
-async function fetchAndUpdateData(resource, updateFunction) {
+async function fetchEntradas() {
   try {
-    const response = await fetch(`${BASE_URL}/get${capitalize(resource)}`);
+    const response = await fetch(`${window.location.origin + '/app'}/getEntradas`);
     const data = await response.json();
-    updateFunction(data);
+    entradas = data;
+    return data;
   } catch (error) {
-    console.error(`Erro ao buscar ${resource}:`, error);
-    updateFunction([]); // Atualiza com array vazia em caso de erro
+    console.error('Erro ao buscar entradas:', error);
+  }
+}
+
+async function fetchSaidas() {
+  try {
+    const response = await fetch(`${window.location.origin + '/app'}/getSaidas`);
+    const data = await response.json();
+    saidas = data;
+    return data;
+  } catch (error) {
+    console.error('Erro ao buscar saidas:', error);
+  }
+}
+
+async function fetchCategorias() {
+  try {
+    const response = await fetch(`${window.location.origin + '/app'}/getCategorias`);
+    const data = await response.json();
+    categorias = data;
+    return data;
+  } catch (error) {
+    console.error('Erro ao buscar categorias:', error);
+  }
+}
+
+async function fetchClientes() {
+  try {
+    const response = await fetch(`${window.location.origin + '/app'}/getClientes`);
+    const data = await response.json();
+    clientes = data;
+    return data;
+  } catch (error) {
+    console.error('Erro ao buscar clientes:', error);
+  }
+}
+
+async function fetchFornecedores() {
+  try {
+    const response = await fetch(`${window.location.origin + '/app'}/getFornecedores`);
+    const data = await response.json();
+    fornecedores = data;
+    return data;
+  } catch (error) {
+    console.error('Erro ao buscar fornecedores:', error);
   }
 }
 
@@ -150,64 +142,60 @@ function atualizarProdutosMaisVendidos() {
     .join("");
 }
 
-
 function atualizarGraficoCategorias(categorias) {
-  if (!categorias || categorias.length === 0) {
-    console.error("Categorias inválidas ou não carregadas.");
+  const ctx = document.getElementById('grafico-categorias');
+
+  if (!ctx) {
+    console.error('Elemento do gráfico não encontrado');
     return;
   }
 
-  const categoriasContagem = produtos.reduce((mapa, produto) => {
-    if (!mapa[produto.idCategoria]) {
-      mapa[produto.idCategoria] = 0;
-    }
-    mapa[produto.idCategoria] += 1;
-    return mapa;
-  }, {});
-
-  const categoriasLabels = Object.keys(categoriasContagem).map(id => {
-    const categoria = categorias.find(c => c.id == id);
-    return categoria ? categoria.nome : `Categoria ${id}`;
-  });
-
-  const categoriasData = Object.values(categoriasContagem);
-
-  // Gerar cores distintas usando HSL
-  const gerarCoresDistintas = (quantidade) => {
-    const cores = [];
-    const intervalo = 360 / quantidade; // Espaçamento igual no espectro de cores
-    for (let i = 0; i < quantidade; i++) {
-      const hue = Math.round(i * intervalo); // Variar o tom (hue)
-      cores.push(`hsl(${hue}, 70%, 60%)`); // Saturação fixa e brilho médio
-    }
-    return cores;
-  };
-
-  const categoriasCores = gerarCoresDistintas(categoriasLabels.length);
-
-  // Verificar se já existe um gráfico e destruí-lo antes de criar um novo
-  if (chartCategorias) {
-    chartCategorias.destroy();
+  // Se já existe um gráfico, destrua-o
+  if (window.chartCategorias) {
+    window.chartCategorias.destroy();
   }
 
-  const ctxCategorias = document.getElementById("chart-categorias").getContext("2d");
-  chartCategorias = new Chart(ctxCategorias, {
-    type: "doughnut",
-    data: {
-      labels: categoriasLabels,
-      datasets: [{
-        data: categoriasData,
-        backgroundColor: categoriasCores,
-      }],
-    },
+  const dados = {
+    labels: categorias.map(c => c.nome),
+    datasets: [{
+      label: 'Produtos por Categoria',
+      data: categorias.map(c => c.total_produtos || 0),
+      backgroundColor: [
+        'rgba(255, 99, 132, 0.5)',
+        'rgba(54, 162, 235, 0.5)',
+        'rgba(255, 206, 86, 0.5)',
+        'rgba(75, 192, 192, 0.5)',
+        'rgba(153, 102, 255, 0.5)',
+      ],
+      borderColor: [
+        'rgba(255, 99, 132, 1)',
+        'rgba(54, 162, 235, 1)',
+        'rgba(255, 206, 86, 1)',
+        'rgba(75, 192, 192, 1)',
+        'rgba(153, 102, 255, 1)',
+      ],
+      borderWidth: 1
+    }]
+  };
+
+  const config = {
+    type: 'doughnut',
+    data: dados,
     options: {
+      responsive: true,
       plugins: {
         legend: {
           position: 'bottom',
         },
-      },
+        title: {
+          display: true,
+          text: 'Distribuição de Produtos por Categoria'
+        }
+      }
     },
-  });
+  };
+
+  window.chartCategorias = new Chart(ctx, config);
 }
 
 async function calcularLucro() {
@@ -240,8 +228,8 @@ function calcularLucroLiquido(entradas, saidas) {
 
 async function calcularValorEstoque() {
     try {
-        const produtosResponse = await fetch(`${BASE_URL}/getProdutos`);
-        const entradasResponse = await fetch(`${BASE_URL}/getEntradas`);
+        const produtosResponse = await fetch(`${window.location.origin + '/app'}/getProdutos`, {method: 'GET'});
+        const entradasResponse = await fetch(`${window.location.origin + '/app'}/getEntradas`, {method: 'GET'});
         const produtos = await produtosResponse.json();
         const entradas = await entradasResponse.json();
 
@@ -355,17 +343,31 @@ document.getElementById('periodo').addEventListener('change', (event) => {
   calcularLucroPorPeriodo(periodo);
 });
 
-// Chamada inicial para calcular com o período "total"
-window.onload = async () => {
-  await loadDashboardData();
-  calcularLucroPorPeriodo('total'); // Exibe lucro total ao carregar a página
-  carregarProdutosBaixoEstoque();
-  calcularValorEstoque()
-};
+// Carrega os dados iniciais
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    await Promise.all([
+      fetchProdutos(),
+      fetchEntradas(),
+      fetchSaidas(),
+      fetchCategorias(),
+      fetchClientes(),
+      fetchFornecedores()
+    ]);
+    atualizarCaixas();
+    atualizarProdutosMaisVendidos();
+    atualizarGraficoCategorias(categorias);
+    calcularLucroPorPeriodo('total');
+    carregarProdutosBaixoEstoque();
+    calcularValorEstoque();
+  } catch (error) {
+    console.error('Erro ao carregar dados:', error);
+  }
+});
 
 async function carregarProdutosBaixoEstoque() {
   try {
-    const response = await fetch(`${BASE_URL}/getProdutos`);
+    const response = await fetch(`${window.location.origin + '/app'}/getProdutos`, {method: 'GET'});
     const produtos = await response.json();
 
     const produtosBaixoEstoque = produtos.filter(p =>
