@@ -9,7 +9,7 @@ async function handleEditFormSubmission(formSelector, url, callback) {
         
         try {
             const formData = new FormData(this);
-            const response = await fetch(url, {
+            const response = await fetch(`${window.location.origin + '/app'}${url}`, {
                 method: "POST",
                 body: formData,
                 ...DEFAULT_FETCH_OPTIONS
@@ -69,7 +69,7 @@ function atualizarDadosGlobais(response) {
 }
 
 // Registra formulários para edição
-handleEditFormSubmission("#produto-update", `${BASE_URL}/estoque-pu`, function(response) {
+handleEditFormSubmission("#produto-update", "/estoque-pu", function(response) {
     if (response.produtos) {
         produtos = response.produtos;
         produtosFiltrados = [...produtos];
@@ -77,11 +77,11 @@ handleEditFormSubmission("#produto-update", `${BASE_URL}/estoque-pu`, function(r
         mostrarPagina(1);
     }
 });
-handleEditFormSubmission("#entrada-editar", `${BASE_URL}/estoque-eu`, atualizarDadosGlobais);
-handleEditFormSubmission("#saida-editar", `${BASE_URL}/estoque-su`, atualizarDadosGlobais);
-handleEditFormSubmission("#categoria-editar", `${BASE_URL}/estoque-cu`, fetchCategorias);
-handleEditFormSubmission("#cliente-update", `${BASE_URL}/update-clientes`, fetchClientes);
-handleEditFormSubmission("#formEditarFornecedor", `${BASE_URL}/update-fornecedores`, fetchFornecedores);
+handleEditFormSubmission("#entrada-editar", "/estoque-eu", atualizarDadosGlobais);
+handleEditFormSubmission("#saida-editar", "/estoque-su", atualizarDadosGlobais);
+handleEditFormSubmission("#categoria-editar", "/estoque-cu", fetchCategorias);
+handleEditFormSubmission("#cliente-update", "/update-clientes", fetchClientes);
+handleEditFormSubmission("#formEditarFornecedor", "/update-fornecedores", fetchFornecedores);
 
 // Função para formatar preço antes de enviar
 function formatarPrecoParaEnvio(preco) {

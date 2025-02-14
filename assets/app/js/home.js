@@ -45,6 +45,7 @@ async function fetchCategorias() {
     const response = await fetch(`${window.location.origin + '/app'}/getCategorias`);
     const data = await response.json();
     categorias = data;
+    atualizarGraficoCategorias(data); // Chama a função para atualizar o gráfico
     return data;
   } catch (error) {
     console.error('Erro ao buscar categorias:', error);
@@ -162,11 +163,20 @@ function atualizarGraficoCategorias(categorias) {
     chartCategorias.destroy();
   }
 
+  // Calcula o total de produtos por categoria
+  const produtosPorCategoria = categorias.map(categoria => {
+    const total = produtos.filter(produto => produto.idCategoria === categoria.id).length;
+    return {
+      nome: categoria.nome,
+      total: total
+    };
+  });
+
   const dados = {
-    labels: categorias.map(c => c.nome),
+    labels: produtosPorCategoria.map(c => c.nome),
     datasets: [{
       label: 'Produtos por Categoria',
-      data: categorias.map(c => c.total_produtos || 0),
+      data: produtosPorCategoria.map(c => c.total),
       backgroundColor: [
         'rgba(255, 99, 132, 0.5)',
         'rgba(54, 162, 235, 0.5)',

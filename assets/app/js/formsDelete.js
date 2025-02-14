@@ -7,7 +7,7 @@ form_produto_excluir.on("submit", function (e) {
 
     $.ajax({
         type: "POST",
-        url: `${BASE_URL}/estoque-pd`,
+        url: `${window.location.origin + '/app'}/estoque-pd`,
         data: serializedData,
         dataType: "json",
         success: function (response) {
@@ -41,7 +41,7 @@ form_categoria_excluir.on("submit", function (e) {
 
     $.ajax({
         type: "POST",
-        url: `${BASE_URL}/estoque-cd`,
+        url: `${window.location.origin + '/app'}/estoque-cd`,
         data: serializedData,
         dataType: "json",
         success: function (response) {
@@ -76,7 +76,7 @@ form_entrada_excluir.on("submit", function (e) {
 
     $.ajax({
         type: "POST",
-        url: `${BASE_URL}/estoque-ed`,
+        url: `${window.location.origin + '/app'}/estoque-ed`,
         data: serializedData,
         dataType: "json",
         success: function (response) {
@@ -111,7 +111,7 @@ form_saida_excluir.on("submit", function (e) {
 
     $.ajax({
         type: "POST",
-        url: `${BASE_URL}/estoque-sd`,
+        url: `${window.location.origin + '/app'}/estoque-sd`,
         data: serializedData,
         dataType: "json",
         success: function (response) {
@@ -146,7 +146,7 @@ form_cliente_excluir.on("submit", function (e) {
 
     $.ajax({
         type: "POST",
-        url: `${BASE_URL}/deletar-clientes`,
+        url: `${window.location.origin + '/app'}/deletar-clientes`,
         data: serializedData,
         dataType: "json",
         success: function (response) {
@@ -180,7 +180,7 @@ form_fornecedor_excluir.on("submit", function (e) {
 
     $.ajax({
         type: "POST",
-        url: `${BASE_URL}/deletar-fornecedores`,
+        url: `${window.location.origin + '/app'}/deletar-fornecedores`,
         data: serializedData,
         dataType: "json",
         success: function (response) {

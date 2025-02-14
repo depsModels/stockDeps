@@ -303,17 +303,19 @@ function renderizarTabela() {
 }
 
 function buscarProduto() {
-  const inputBuscarProduto = document.getElementById("buscarProduto");
-  let debounceTimer;
+  const inputBusca = document.getElementById("buscarProduto");
+  if (!inputBusca) return;
+
+  let timeoutId;
   let lastQuery = "";
 
-  inputBuscarProduto.addEventListener("input", function () {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
+  inputBusca.addEventListener("input", function () {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
       performanceMetrics.startMeasure("buscarProduto");
-      const termoBusca = inputBuscarProduto.value.toLowerCase();
 
-      // Skip if query hasn't changed
+      const termoBusca = removerAcentos(this.value.toLowerCase().trim());
+
       if (termoBusca === lastQuery) {
         performanceMetrics.endMeasure("buscarProduto");
         return;
@@ -324,12 +326,11 @@ function buscarProduto() {
       if (cache.searchResults.has(termoBusca)) {
         produtosFiltrados = cache.searchResults.get(termoBusca);
       } else {
-        // Use pre-processed lowercase names
-        produtosFiltrados = produtos.filter(
-          (produto) =>
-            produto._nomeLower.includes(termoBusca) ||
-            produto._codigoLower.includes(termoBusca)
-        );
+        produtosFiltrados = produtos.filter((produto) => {
+          const nome = produto.nome ? removerAcentos(produto.nome.toLowerCase()) : '';
+          const codigo = produto.codigo ? removerAcentos(produto.codigo.toLowerCase()) : '';
+          return nome.includes(termoBusca) || codigo.includes(termoBusca);
+        });
         // Cache results
         cache.searchResults.set(termoBusca, produtosFiltrados);
       }
@@ -677,17 +678,19 @@ function renderizarTabela() {
 }
 
 function buscarProduto() {
-  const inputBuscarProduto = document.getElementById("buscarProduto");
-  let debounceTimer;
+  const inputBusca = document.getElementById("busca");
+  if (!inputBusca) return;
+
+  let timeoutId;
   let lastQuery = "";
 
-  inputBuscarProduto.addEventListener("input", function () {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
+  inputBusca.addEventListener("input", function () {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
       performanceMetrics.startMeasure("buscarProduto");
-      const termoBusca = inputBuscarProduto.value.toLowerCase();
 
-      // Skip if query hasn't changed
+      const termoBusca = removerAcentos(this.value.toLowerCase().trim());
+
       if (termoBusca === lastQuery) {
         performanceMetrics.endMeasure("buscarProduto");
         return;
@@ -698,12 +701,11 @@ function buscarProduto() {
       if (cache.searchResults.has(termoBusca)) {
         produtosFiltrados = cache.searchResults.get(termoBusca);
       } else {
-        // Use pre-processed lowercase names
-        produtosFiltrados = produtos.filter(
-          (produto) =>
-            produto._nomeLower.includes(termoBusca) ||
-            produto._codigoLower.includes(termoBusca)
-        );
+        produtosFiltrados = produtos.filter((produto) => {
+          const nome = produto.nome ? removerAcentos(produto.nome.toLowerCase()) : '';
+          const codigo = produto.codigo ? removerAcentos(produto.codigo.toLowerCase()) : '';
+          return nome.includes(termoBusca) || codigo.includes(termoBusca);
+        });
         // Cache results
         cache.searchResults.set(termoBusca, produtosFiltrados);
       }
@@ -825,7 +827,7 @@ function mostrarPagina(pagina) {
   }
 
   tbody.innerHTML = html;
-  atualizarPaginacao(produtosOrdenados.length, pagina);
+  atualizarPaginacao(produtosOrdenados.length, paginaAtual);
   performanceMetrics.endMeasure("mostrarPagina");
 }
 
@@ -834,74 +836,80 @@ function atualizarPaginacao(totalProdutos, paginaAtual) {
   const pagination = document.getElementById("pagination");
   pagination.innerHTML = ""; // Limpa o container de paginação
 
-  const paginaInicial = Math.max(
-    1,
-    paginaAtual - Math.floor(5 / 2)
-  );
-  const paginaFinal = Math.min(
-    totalPaginas,
-    paginaInicial + 5 - 1
-  );
+  const maxBotoes = 5;
+  let inicio = Math.max(1, paginaAtual - Math.floor(maxBotoes / 2));
+  let fim = Math.min(totalPaginas, inicio + maxBotoes - 1);
+
+  // Ajusta o início se necessário
+  if (fim - inicio + 1 < maxBotoes) {
+    inicio = Math.max(1, fim - maxBotoes + 1);
+  }
 
   // Botão "Anterior"
   if (paginaAtual > 1) {
-    const liPrev = document.createElement("li");
-    liPrev.classList.add("page-item");
-    const aPrev = document.createElement("a");
-    aPrev.classList.add("page-link");
-    aPrev.textContent = "Anterior";
-    aPrev.onclick = () => mostrarPagina(paginaAtual - 1, produtos);
-    liPrev.appendChild(aPrev);
-    pagination.appendChild(liPrev);
+    pagination.innerHTML += `
+      <li class="page-item">
+        <a class="page-link" href="#" onclick="mostrarPagina(${paginaAtual - 1})">Anterior</a>
+      </li>
+    `;
   }
 
-  // Botões das páginas
-  for (let i = paginaInicial; i <= paginaFinal; i++) {
-    const li = document.createElement("li");
-    li.classList.add("page-item");
-    if (i === paginaAtual) {
-      li.classList.add("active"); // Adiciona a classe ativa na página atual
-    }
+  // Primeira página se não estiver no início
+  if (inicio > 1) {
+    pagination.innerHTML += `
+      <li class="page-item">
+        <a class="page-link" href="#" onclick="mostrarPagina(1)">1</a>
+      </li>
+      ${inicio > 2 ? '<li class="page-item disabled"><span class="page-link">...</span></li>' : ''}
+    `;
+  }
 
-    const a = document.createElement("a");
-    a.classList.add("page-link");
-    a.textContent = i;
-    a.onclick = () => {
-      mostrarPagina(i, produtos); // Navega para a página correspondente
-    };
-    li.appendChild(a);
-    pagination.appendChild(li);
+  // Páginas numeradas
+  for (let i = inicio; i <= fim; i++) {
+    pagination.innerHTML += `
+      <li class="page-item ${i === paginaAtual ? 'active' : ''}">
+        <a class="page-link" href="#" onclick="mostrarPagina(${i})">${i}</a>
+      </li>
+    `;
+  }
+
+  // Última página se não estiver no fim
+  if (fim < totalPaginas) {
+    pagination.innerHTML += `
+      ${totalPaginas - fim > 1 ? '<li class="page-item disabled"><span class="page-link">...</span></li>' : ''}
+      <li class="page-item">
+        <a class="page-link" href="#" onclick="mostrarPagina(${totalPaginas})">${totalPaginas}</a>
+      </li>
+    `;
   }
 
   // Botão "Próximo"
   if (paginaAtual < totalPaginas) {
-    const liNext = document.createElement("li");
-    liNext.classList.add("page-item");
-    const aNext = document.createElement("a");
-    aNext.classList.add("page-link");
-    aNext.textContent = "Próximo";
-    aNext.onclick = () => mostrarPagina(paginaAtual + 1, produtos);
-    liNext.appendChild(aNext);
-    pagination.appendChild(liNext);
+    pagination.innerHTML += `
+      <li class="page-item">
+        <a class="page-link" href="#" onclick="mostrarPagina(${paginaAtual + 1})">Próximo</a>
+      </li>
+    `;
   }
 }
 
 function alterarTabelaPorCategoriaSelecionada() {
   const categoriaSelecionada = document.getElementById("categoria").value;
-  const categoriaSelecionadaNumero = Number(categoriaSelecionada);
-
-  if (categoriaSelecionada && !isNaN(categoriaSelecionadaNumero)) {
-    produtosFiltrados = produtosOriginais.filter(
-      (produto) => Number(produto.idCategoria) === categoriaSelecionadaNumero
-    );
+  console.log("Categoria selecionada:", categoriaSelecionada);
+  
+  if (categoriaSelecionada) {
+    produtosFiltrados = produtos.filter(produto => {
+      console.log("Comparando:", produto.idCategoria, parseInt(categoriaSelecionada));
+      return parseInt(produto.idCategoria) === parseInt(categoriaSelecionada);
+    });
   } else {
-    produtosFiltrados = [...produtosOriginais]; // Reseta para todos os produtos
+    produtosFiltrados = [...produtos];
   }
-
-  // Reiniciar a ordenação com os produtos filtrados
+  
+  console.log("Produtos filtrados:", produtosFiltrados.length);
   produtosOrdenados = [...produtosFiltrados];
-  paginaAtual = 1; // Reinicia na primeira página
-  mostrarPagina(paginaAtual); // Mostra a tabela atualizada
+  paginaAtual = 1;
+  mostrarPagina(paginaAtual);
 }
 
 function ordenarProdutos(produtos) {
@@ -1951,30 +1959,12 @@ document.addEventListener('DOMContentLoaded', function() {
 async function fetchFornecedores() {
   try {
     const response = await fetch(`${window.location.origin + '/app'}/getFornecedores`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const data = await response.json();
-    console.log('Dados brutos dos fornecedores:', data);
-    
-    fornecedores = Array.isArray(data) ? data : [];
-    fornecedoresFiltrados = [...fornecedores];
-    
-    // Preencher as sugestões após carregar os fornecedores
+    fornecedores = (await response.json()) || [];
+    cache.fornecedores.clear();
+    fornecedores.forEach((f) => cache.fornecedores.set(f.id, f));
     preencherSugestoesFornecedores();
-    
-    console.log('Fornecedores processados:', {
-      total: fornecedores.length,
-      primeiro: fornecedores[0],
-      estrutura: fornecedores.length > 0 ? {
-        id: typeof fornecedores[0].id,
-        nome: typeof fornecedores[0].nome
-      } : 'Sem fornecedores'
-    });
   } catch (error) {
-    console.error('Erro ao carregar fornecedores:', error);
-    fornecedores = [];
-    fornecedoresFiltrados = [];
+    console.error("Erro ao carregar fornecedores:", error);
   }
 }
 
@@ -2229,7 +2219,9 @@ function confirmarExclusaoSaida() {
 
           exibirMensagemTemporariaSucesso(response.message);
         } else {
-          exibirMensagemTemporariaErro(response.message);
+          exibirMensagemTemporariaErro(
+            response.message || "Erro ao excluir saída"
+          );
         }
       } catch (e) {
         console.error('Erro ao processar resposta:', e);
@@ -2403,3 +2395,190 @@ function editarSaida(id) {
     const modalEditarSaida = new bootstrap.Modal(document.getElementById('modalEditarSaida'));
     modalEditarSaida.show();
 }
+
+function alterarTabelaPorCategoriaSelecionada() {
+  const categoriaSelecionada = document.getElementById("categoria").value;
+  
+  if (categoriaSelecionada) {
+    produtosFiltrados = produtos.filter(produto => produto.idCategoria === parseInt(categoriaSelecionada));
+  } else {
+    produtosFiltrados = [...produtos];
+  }
+  
+  produtosOrdenados = [...produtosFiltrados];
+  paginaAtual = 1;
+  mostrarPagina(paginaAtual);
+}
+
+function abrirModalEntrada(idProduto) {
+  const produto = produtos.find(p => p.id === idProduto);
+  if (produto) {
+    document.getElementById("produtoEntradaId").value = produto.id;
+    document.getElementById("nomeProdutoEntrada").value = produto.nome;
+    const modalEntrada = new bootstrap.Modal(document.getElementById('modalEntrada'));
+    modalEntrada.show();
+  }
+}
+
+function abrirModalSaida(idProduto) {
+  const produto = produtos.find(p => p.id === idProduto);
+  if (produto) {
+    document.getElementById("produtoSaidaId").value = produto.id;
+    document.getElementById("nomeProdutoSaida").value = produto.nome;
+    const modalSaida = new bootstrap.Modal(document.getElementById('modalSaida'));
+    modalSaida.show();
+  }
+}
+
+function atualizarPaginacao(totalProdutos, paginaAtual) {
+  const totalPaginas = Math.ceil(totalProdutos / 10);
+  const pagination = document.getElementById("pagination");
+  
+  if (!pagination) return;
+  pagination.innerHTML = "";
+  
+  const maxBotoes = 5;
+  let inicio = Math.max(1, paginaAtual - Math.floor(maxBotoes / 2));
+  let fim = Math.min(totalPaginas, inicio + maxBotoes - 1);
+
+  // Ajusta o início se necessário
+  if (fim - inicio + 1 < maxBotoes) {
+    inicio = Math.max(1, fim - maxBotoes + 1);
+  }
+
+  // Botão "Anterior"
+  if (paginaAtual > 1) {
+    pagination.innerHTML += `
+      <li class="page-item">
+        <a class="page-link" href="#" onclick="mostrarPagina(${paginaAtual - 1})">Anterior</a>
+      </li>
+    `;
+  }
+
+  // Primeira página se não estiver no início
+  if (inicio > 1) {
+    pagination.innerHTML += `
+      <li class="page-item">
+        <a class="page-link" href="#" onclick="mostrarPagina(1)">1</a>
+      </li>
+      ${inicio > 2 ? '<li class="page-item disabled"><span class="page-link">...</span></li>' : ''}
+    `;
+  }
+
+  // Páginas numeradas
+  for (let i = inicio; i <= fim; i++) {
+    pagination.innerHTML += `
+      <li class="page-item ${i === paginaAtual ? 'active' : ''}">
+        <a class="page-link" href="#" onclick="mostrarPagina(${i})">${i}</a>
+      </li>
+    `;
+  }
+
+  // Última página se não estiver no fim
+  if (fim < totalPaginas) {
+    pagination.innerHTML += `
+      ${totalPaginas - fim > 1 ? '<li class="page-item disabled"><span class="page-link">...</span></li>' : ''}
+      <li class="page-item">
+        <a class="page-link" href="#" onclick="mostrarPagina(${totalPaginas})">${totalPaginas}</a>
+      </li>
+    `;
+  }
+
+  // Botão "Próximo"
+  if (paginaAtual < totalPaginas) {
+    pagination.innerHTML += `
+      <li class="page-item">
+        <a class="page-link" href="#" onclick="mostrarPagina(${paginaAtual + 1})">Próximo</a>
+      </li>
+    `;
+  }
+}
+
+function consultarEntradas() {
+  const modal = new bootstrap.Modal(document.getElementById('entradasModal'));
+  modal.show();
+}
+
+function consultarSaidas() {
+  const modal = new bootstrap.Modal(document.getElementById('saidasModal'));
+  modal.show();
+}
+
+function alterarTabelaPorCategoriaSelecionada() {
+  const categoriaSelecionada = document.getElementById("categoria").value;
+  console.log("Categoria selecionada:", categoriaSelecionada);
+  
+  if (categoriaSelecionada) {
+    produtosFiltrados = produtos.filter(produto => {
+      console.log("Comparando:", produto.idCategoria, parseInt(categoriaSelecionada));
+      return parseInt(produto.idCategoria) === parseInt(categoriaSelecionada);
+    });
+  } else {
+    produtosFiltrados = [...produtos];
+  }
+  
+  console.log("Produtos filtrados:", produtosFiltrados.length);
+  produtosOrdenados = [...produtosFiltrados];
+  paginaAtual = 1;
+  mostrarPagina(paginaAtual);
+}
+
+function abrirModalEntrada(id) {
+  const produto = produtos.find(p => p.id === id);
+  if (!produto) {
+    console.error('Produto não encontrado');
+    return;
+  }
+
+  document.getElementById('produtoId').value = id;
+  const precoInput = document.getElementById('precoEntrada');
+  if (precoInput) {
+    precoInput.value = formatarPrecoParaInput(0);
+  }
+
+  const modalEntrada = new bootstrap.Modal(
+    document.getElementById('modalEntrada')
+  );
+  modalEntrada.show();
+}
+
+function abrirModalSaida(id) {
+  const produto = produtos.find(p => p.id === id);
+  if (!produto) {
+    console.error('Produto não encontrado');
+    return;
+  }
+
+  const produtoIdInput = document.getElementById('produtoId2');
+  const precoInput = document.getElementById('precoSaida');
+
+  if (produtoIdInput) {
+    produtoIdInput.value = id;
+  }
+
+  if (precoInput) {
+    precoInput.value = formatarPrecoParaInput(produto.preco);
+  }
+
+  const modalSaida = new bootstrap.Modal(document.getElementById('modalSaida'));
+  modalSaida.show();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Event listener para o select de categorias
+  const selectCategoria = document.getElementById('categoria');
+  if (selectCategoria) {
+    selectCategoria.addEventListener('change', alterarTabelaPorCategoriaSelecionada);
+  }
+
+  // Event listeners para os botões de consulta
+  const btnConsultarEntradas = document.getElementById('consultarEntradasBtn');
+  if (btnConsultarEntradas) {
+    btnConsultarEntradas.addEventListener('click', consultarEntradas);
+  }
+
+  const btnConsultarSaidas = document.getElementById('consultarSaidasBtn');
+  if (btnConsultarSaidas) {
+    btnConsultarSaidas.addEventListener('click', consultarSaidas);
+  }
+});
