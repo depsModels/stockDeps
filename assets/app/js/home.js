@@ -1,4 +1,11 @@
-// Funções específicas da página inicial
+// Variáveis globais
+let produtos = [];
+let entradas = [];
+let saidas = [];
+let categorias = [];
+let clientes = [];
+let fornecedores = [];
+let chartCategorias = null;
 
 async function fetchProdutos() {
   try {
@@ -29,7 +36,7 @@ async function fetchSaidas() {
     saidas = data;
     return data;
   } catch (error) {
-    console.error('Erro ao buscar saidas:', error);
+    console.error('Erro ao buscar saídas:', error);
   }
 }
 
@@ -151,8 +158,8 @@ function atualizarGraficoCategorias(categorias) {
   }
 
   // Se já existe um gráfico, destrua-o
-  if (window.chartCategorias) {
-    window.chartCategorias.destroy();
+  if (chartCategorias) {
+    chartCategorias.destroy();
   }
 
   const dados = {
@@ -195,7 +202,7 @@ function atualizarGraficoCategorias(categorias) {
     },
   };
 
-  window.chartCategorias = new Chart(ctx, config);
+  chartCategorias = new Chart(ctx, config);
 }
 
 async function calcularLucro() {

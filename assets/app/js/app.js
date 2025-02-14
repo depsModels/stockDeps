@@ -1,4 +1,4 @@
-// State variables
+const BASE_URL = 'https://stockdeps.com/app';
 let produtosOriginais = [];
 let paginaAtualEntradas = 1;
 let paginaAtualSaidas = 1;
