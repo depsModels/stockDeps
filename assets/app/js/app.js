@@ -1082,118 +1082,102 @@ function createButtonGroup(produto) {
 }
 
 function editarProduto(id) {
-  const produto = produtos.find((p) => p.id === id);
+  console.log('Editando produto:', id);
+  const produto = produtos.find(p => p.id === id);
   if (!produto) {
-    console.error("Produto não encontrado");
+    console.error('Produto não encontrado');
     return;
   }
+  
+  console.log('Dados do produto:', produto);
 
-  // Preencher os campos do modal
-  document.getElementById("idProdutoUpdate").value = produto.id;
-  document.getElementById("codigoProdutoEditar").value =
-    produto.codigo_produto || "";
-  document.getElementById("nomeProduto").value = produto.nome || "";
-  document.getElementById("descricaoProduto").value = produto.descricao || "";
-
-  const precoInput = document.getElementById("precoProduto");
+  // Preencher campos básicos
+  document.getElementById('idProdutoUpdate').value = produto.id;
+  document.getElementById('codigoProdutoEditar').value = produto.codigo_produto || '';
+  document.getElementById('nomeProduto').value = produto.nome || '';
+  document.getElementById('descricaoProduto').value = produto.descricao || '';
+  
+  // Formatar e preencher o preço
+  const precoInput = document.getElementById('precoProduto');
   if (precoInput) {
-    precoInput.value = formatarPrecoParaInput(produto.preco);
+    const precoFormatado = formatarPrecoParaExibicao(produto.preco);
+    console.log('Preço original:', produto.preco);
+    console.log('Preço formatado:', precoFormatado);
+    precoInput.value = precoFormatado;
   }
 
-  const categoriaSelect = document.getElementById("categoriaProdutoEditar");
-  if (categoriaSelect) {
-    // Limpar opções existentes
-    categoriaSelect.innerHTML =
-      '<option value="">Selecione uma categoria</option>';
-
-    // Adicionar categorias
-    categorias.forEach((categoria) => {
-      const option = document.createElement("option");
-      option.value = categoria.id;
-      option.textContent = categoria.nome;
-      if (produto.idCategoria === categoria.id) {
-        option.selected = true;
-      }
-      categoriaSelect.appendChild(option);
-    });
+  // Preencher categoria
+  const selectCategoria = document.getElementById('categoriaProdutoEditar');
+  if (selectCategoria) {
+    selectCategoria.value = produto.idCategoria || '';
+    console.log('Categoria selecionada:', produto.idCategoria);
   }
 
-  // Atualizar a imagem do produto
-  const previewImagem = document.getElementById("previewImagem");
-  if (previewImagem) {
+  // Preencher unidade
+  const selectUnidade = document.getElementById('unidadeProdutoEditar');
+  if (selectUnidade) {
+    selectUnidade.value = produto.unidade_medida || 'UN';
+    console.log('Unidade selecionada:', produto.unidade_medida);
+  }
+
+  // Mostrar imagem atual
+  const preview = document.getElementById('previewImagemEditar');
+  if (preview) {
     if (produto.imagem) {
-      previewImagem.src = produto.imagem;
-      previewImagem.style.display = "block";
+      preview.src = produto.imagem;
+      preview.style.display = 'block';
     } else {
-      previewImagem.src = "";
-      previewImagem.style.display = "none";
+      preview.style.display = 'none';
     }
   }
 
-  // Adicionar listener para preview de nova imagem
-  const inputImagem = document.getElementById("fotoProduto");
-  if (inputImagem) {
-    inputImagem.onchange = function (e) {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function (e) {
-          previewImagem.src = e.target.result;
-          previewImagem.style.display = "block";
-        };
-        reader.readAsDataURL(file);
-      }
-    };
-  }
-
-  const modalEditar = new bootstrap.Modal(
-    document.getElementById("modalEditar")
-  );
-  modalEditar.show();
+  // Mostrar modal
+  const modal = new bootstrap.Modal(document.getElementById('modalEditar'));
+  modal.show();
 }
 
 function excluirProduto(id) {
-  const produto = produtos.find((p) => p.id === id);
+  const produto = produtos.find(p => p.id === id);
   if (!produto) {
-    console.error("Produto não encontrado");
+    console.error('Produto não encontrado');
     return;
   }
 
-  document.getElementById("idProdutoExcluir").value = id;
+  document.getElementById('idProdutoExcluir').value = id;
   const modalExcluir = new bootstrap.Modal(
-    document.getElementById("modalExcluir")
+    document.getElementById('modalExcluir')
   );
   modalExcluir.show();
 }
 
 function abrirModalEntrada(id) {
-  const produto = produtos.find((p) => p.id === id);
+  const produto = produtos.find(p => p.id === id);
   if (!produto) {
-    console.error("Produto não encontrado");
+    console.error('Produto não encontrado');
     return;
   }
 
-  document.getElementById("produtoId").value = id;
-  const precoInput = document.getElementById("precoEntrada");
+  document.getElementById('produtoId').value = id;
+  const precoInput = document.getElementById('precoEntrada');
   if (precoInput) {
     precoInput.value = formatarPrecoParaInput(0);
   }
 
   const modalEntrada = new bootstrap.Modal(
-    document.getElementById("modalEntrada")
+    document.getElementById('modalEntrada')
   );
   modalEntrada.show();
 }
 
 function abrirModalSaida(id) {
-  const produto = produtos.find((p) => p.id === id);
+  const produto = produtos.find(p => p.id === id);
   if (!produto) {
-    console.error("Produto não encontrado");
+    console.error('Produto não encontrado');
     return;
   }
 
-  const produtoIdInput = document.getElementById("produtoId2");
-  const precoInput = document.getElementById("precoSaida");
+  const produtoIdInput = document.getElementById('produtoId2');
+  const precoInput = document.getElementById('precoSaida');
 
   if (produtoIdInput) {
     produtoIdInput.value = id;
@@ -1203,307 +1187,203 @@ function abrirModalSaida(id) {
     precoInput.value = formatarPrecoParaInput(produto.preco);
   }
 
-  const modalSaida = new bootstrap.Modal(document.getElementById("modalSaida"));
+  const modalSaida = new bootstrap.Modal(document.getElementById('modalSaida'));
   modalSaida.show();
 }
 
 // Funções de formatação de preço
 function formatarPreco(input) {
-  let valor = input.value.replace(/\D/g, "");
+  let valor = input.value.replace(/\D/g, '');
   valor = (valor / 100).toFixed(2);
   input.value = formatarPrecoParaExibicao(valor);
 }
 
 function formatarPrecoParaExibicao(valor) {
-  if (!valor) return "R$ 0,00";
-
-  const numero = typeof valor === "string" ? parseFloat(valor) : valor;
-  return `R$ ${numero.toLocaleString("pt-BR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+  if (!valor) return 'R$ 0,00';
+  
+  // Converter para número
+  const numero = typeof valor === 'string' ? parseFloat(valor) : valor;
+  
+  // Formatar com R$ e duas casas decimais
+  return `R$ ${numero.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function formatarPrecoParaInput(valor) {
-  if (!valor) return "0,00";
+  if (!valor) return '0,00';
 
-  const numero = typeof valor === "string" ? parseFloat(valor) : valor;
-  return numero.toLocaleString("pt-BR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  // Converter para número
+  const numero = typeof valor === 'string' ? parseFloat(valor) : valor;
+  
+  // Formatar com duas casas decimais
+  return numero.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function converterPrecoParaNumero(precoStr) {
   if (!precoStr) return 0;
-  return parseFloat(precoStr.replace(/[^\d,]/g, "").replace(",", "."));
+  return parseFloat(precoStr.replace(/[^\d,]/g, '').replace(',', '.'));
 }
 
 // Adicionar formatação de preço para todos os inputs de preço
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener('DOMContentLoaded', function() {
   const precoInputs = document.querySelectorAll('input[data-tipo="preco"]');
   precoInputs.forEach((input) => {
-    input.addEventListener("input", function (e) {
+    input.addEventListener('input', function(e) {
       formatarPreco(e.target);
     });
   });
 });
 
-function ordenarTabela(coluna, idSeta) {
-  performanceMetrics.startMeasure("ordenarTabela");
-  if (ordemAtual.coluna === coluna) {
-    ordemAtual.crescente = !ordemAtual.crescente;
-  } else {
-    ordemAtual.coluna = coluna;
-    ordemAtual.crescente = true;
+function previewImagemEditar(input) {
+  const preview = document.getElementById('previewImagemEditar');
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      preview.src = e.target.result;
+      preview.style.display = 'block';
+    };
+
+    reader.readAsDataURL(input.files[0]);
   }
+}
 
-  const setas = document.querySelectorAll(".seta");
-  setas.forEach((seta) => (seta.textContent = ""));
+function buscarSaida() {
+  const termo = document.getElementById('buscarSaida').value.toLowerCase();
 
-  const setaAtual = document.getElementById(idSeta);
-  setaAtual.textContent = ordemAtual.crescente ? " ↑" : " ↓";
+  saidasFiltradas = saidas.filter((saida) => {
+    const cliente = clientes.find((c) => c.id === saida.idClientes);
+    const produto = produtosOriginais.find((p) => p.id === saida.idProdutos);
 
-  produtosOrdenados.sort((a, b) => {
-    let valorA = a[coluna];
-    let valorB = b[coluna];
-
-    if (typeof valorA === "string") {
-      valorA = valorA.toLowerCase();
-      valorB = valorB.toLowerCase();
-    }
-
-    if (valorA < valorB) return ordemAtual.crescente ? -1 : 1;
-    if (valorA > valorB) return ordemAtual.crescente ? 1 : -1;
-    return 0;
+    return (
+      (cliente && cliente.nome.toLowerCase().includes(termo)) ||
+      (produto && produto.nome.toLowerCase().includes(termo)) ||
+      saida.quantidade.toString().includes(termo) ||
+      saida.preco.toString().includes(termo)
+    );
   });
 
-  mostrarPagina(paginaAtual);
-  performanceMetrics.endMeasure("ordenarTabela");
+  mostrarPaginaSaidas(1);
 }
 
-function mostrarPaginaSaidas(pagina) {
-  performanceMetrics.startMeasure("mostrarPaginaSaidas");
-  const inicio = (pagina - 1) * CONFIG.itensPorPagina;
-  const fim = inicio + CONFIG.itensPorPagina;
-  const tbody = document.getElementById("corpoTabelaSaidas");
+function filtrarSaidasPorData() {
+  const dataFiltro = document.getElementById('dataFiltroSaida').value;
 
-  if (!tbody) {
-    console.error("Elemento corpoTabelaSaidas não encontrado");
-    return;
-  }
-
-  let html = "";
-  if (!Array.isArray(saidasFiltradas) || saidasFiltradas.length === 0) {
-    html =
-      '<tr><td colspan="6" class="text-center">Nenhuma saída encontrada.</td></tr>';
+  if (!dataFiltro) {
+    saidasFiltradas = [...saidas];
   } else {
-    html = saidasFiltradas
-      .slice(inicio, fim)
-      .map((saida) => {
-        try {
-          const cliente = clientes.find(
-            (c) => parseInt(c.id) === parseInt(saida.idClientes)
-          );
-          const produto = produtos.find(
-            (p) => parseInt(p.id) === parseInt(saida.idProdutos)
-          );
+    const dataFiltroObj = new Date(dataFiltro);
+    dataFiltroObj.setHours(0, 0, 0, 0);
 
-          // Garantir que os valores sejam números
-          const quantidade = parseInt(saida.quantidade) || 0;
-          const preco = parseFloat(saida.preco) || 0;
-
-          return `<tr>
-                    <td>${cliente?.nome || "Cliente não encontrado"}</td>
-                    <td>${produto?.nome || "Produto não encontrado"}</td>
-                    <td>${quantidade}</td>
-                    <td>${formatarPrecoParaExibicao(preco)}</td>
-                    <td>${formatarData(saida.created_at)}</td>
-                    <td>
-                        <button class="btn btn-primary btn-sm" onclick="editarSaida(${
-                          saida.id
-                        })">Editar</button>
-                        <button class="btn btn-danger btn-sm" onclick="excluirSaida(${
-                          saida.id
-                        })">Excluir</button>
-                    </td>
-                </tr>`;
-        } catch (error) {
-          console.error("Erro ao processar saída:", error, saida);
-          return `<tr><td colspan="6" class="text-center text-danger">Erro ao processar saída</td></tr>`;
-        }
-      })
-      .join("");
+    saidasFiltradas = saidas.filter((saida) => {
+      const dataSaida = new Date(saida.created_at);
+      dataSaida.setHours(0, 0, 0, 0);
+      return dataSaida.getTime() === dataFiltroObj.getTime();
+    });
   }
 
-  tbody.innerHTML = html;
-  configurarPaginacao(
-    saidasFiltradas.length,
-    mostrarPaginaSaidas,
-    "#paginacaoSaidas",
-    pagina
-  );
-  performanceMetrics.endMeasure("mostrarPaginaSaidas");
+  mostrarPaginaSaidas(1);
 }
 
-function editarSaida(id) {
-  const saida = saidas.find((s) => s.id === id);
-  if (!saida) {
-    console.error("Saída não encontrada");
+function editarProduto(id) {
+  console.log('Editando produto:', id);
+  const produto = produtos.find(p => p.id === id);
+  if (!produto) {
+    console.error('Produto não encontrado');
+    return;
+  }
+  
+  console.log('Dados do produto:', produto);
+
+  // Preencher campos básicos
+  document.getElementById('idProdutoUpdate').value = produto.id;
+  document.getElementById('codigoProdutoEditar').value = produto.codigo_produto || '';
+  document.getElementById('nomeProduto').value = produto.nome || '';
+  document.getElementById('descricaoProduto').value = produto.descricao || '';
+  document.getElementById('precoProduto').value = formatarPrecoParaExibicao(produto.preco);
+
+  // Preencher categoria
+  const selectCategoria = document.getElementById('categoriaProdutoEditar');
+  if (selectCategoria) {
+    selectCategoria.value = produto.idCategoria || '';
+    console.log('Categoria selecionada:', produto.idCategoria);
+  }
+
+  // Preencher unidade
+  const selectUnidade = document.getElementById('unidadeProdutoEditar');
+  if (selectUnidade) {
+    selectUnidade.value = produto.unidade_medida || 'UN';
+    console.log('Unidade selecionada:', produto.unidade_medida);
+  }
+
+  // Mostrar imagem atual
+  const preview = document.getElementById('previewImagemEditar');
+  if (preview) {
+    if (produto.imagem) {
+      preview.src = produto.imagem;
+      preview.style.display = 'block';
+    } else {
+      preview.style.display = 'none';
+    }
+  }
+
+  // Mostrar modal
+  const modal = new bootstrap.Modal(document.getElementById('modalEditar'));
+  modal.show();
+}
+
+function excluirProduto(id) {
+  const produto = produtos.find(p => p.id === id);
+  if (!produto) {
+    console.error('Produto não encontrado');
     return;
   }
 
-  // Fechar modal de saídas antes de abrir o modal de edição
-  const saidasModal = bootstrap.Modal.getInstance(
-    document.getElementById("saidasModal")
-  );
-  if (saidasModal) {
-    saidasModal.hide();
-  }
-
-  const produto = produtosOriginais.find((p) => p.id === saida.idProdutos);
-  const nomeProduto = produto ? produto.nome : "Produto não encontrado";
-
-  document.getElementById("idEditarSaida").value = saida.id;
-  document.getElementById("saidaProduto").value = nomeProduto;
-  document.getElementById("saidaQuantidade").value = saida.quantidade;
-  document.getElementById("saidaPreco").value = saida.preco;
-
-  const modalEditarSaida = new bootstrap.Modal(
-    document.getElementById("modalEditarSaida")
-  );
-  modalEditarSaida.show();
-
-  // Adicionar listener para quando o modal de edição for fechado
-  document.getElementById("modalEditarSaida").addEventListener(
-    "hidden.bs.modal",
-    function () {
-      fecharTodosModais();
-    },
-    { once: true }
-  );
-}
-
-function excluirSaida(saidaId) {
-  const saida = saidas.find((s) => s.id === saidaId);
-  if (!saida) {
-    console.error("Saída não encontrada");
-    return;
-  }
-
-  document.getElementById("idSaidaExcluir").value = saidaId;
-
-  // Fechar modal de saídas antes de abrir o modal de exclusão
-  const saidasModal = bootstrap.Modal.getInstance(
-    document.getElementById("saidasModal")
-  );
-  if (saidasModal) {
-    saidasModal.hide();
-  }
-
+  document.getElementById('idProdutoExcluir').value = id;
   const modalExcluir = new bootstrap.Modal(
-    document.getElementById("modalExcluirSaida")
+    document.getElementById('modalExcluir')
   );
   modalExcluir.show();
-
-  // Adicionar listener para quando o modal de exclusão for fechado
-  document.getElementById("modalExcluirSaida").addEventListener(
-    "hidden.bs.modal",
-    function () {
-      fecharTodosModais();
-      removerBackdrops();
-    },
-    { once: true }
-  );
 }
 
-function editarEntrada(id) {
-  const entrada = entradasFiltradas.find((e) => e.id === id);
-  if (!entrada) {
-    console.error("Entrada não encontrada");
+function abrirModalEntrada(id) {
+  const produto = produtos.find(p => p.id === id);
+  if (!produto) {
+    console.error('Produto não encontrado');
     return;
   }
 
-  // Fechar modal de entradas antes de abrir o modal de edição
-  const entradasModal = bootstrap.Modal.getInstance(
-    document.getElementById("entradasModal")
-  );
-  if (entradasModal) {
-    entradasModal.hide();
+  document.getElementById('produtoId').value = id;
+  const precoInput = document.getElementById('precoEntrada');
+  if (precoInput) {
+    precoInput.value = formatarPrecoParaInput(0);
   }
 
-  const produto = produtosOriginais.find((p) => p.id === entrada.idProdutos);
-  const nomeProduto = produto ? produto.nome : "Produto não encontrado";
-
-  document.getElementById("idEntradaEditar").value = id;
-  document.getElementById("entradaProduto").value = nomeProduto;
-  document.getElementById("entradaQuantidade").value = entrada.quantidade;
-  document.getElementById("entradaPreco").value = entrada.preco;
-
-  const modalEditarEntrada = new bootstrap.Modal(
-    document.getElementById("modalEditarEntrada")
+  const modalEntrada = new bootstrap.Modal(
+    document.getElementById('modalEntrada')
   );
-  modalEditarEntrada.show();
-
-  // Adicionar listener para quando o modal de edição for fechado
-  document.getElementById("modalEditarEntrada").addEventListener(
-    "hidden.bs.modal",
-    function () {
-      fecharTodosModais();
-    },
-    { once: true }
-  );
+  modalEntrada.show();
 }
 
-function excluirEntrada(id) {
-  const entrada = entradasFiltradas.find((e) => e.id === id);
-  if (!entrada) {
-    console.error("Entrada não encontrada");
+function abrirModalSaida(id) {
+  const produto = produtos.find(p => p.id === id);
+  if (!produto) {
+    console.error('Produto não encontrado');
     return;
   }
 
-  document.getElementById("idEntradaExcluir").value = id;
+  const produtoIdInput = document.getElementById('produtoId2');
+  const precoInput = document.getElementById('precoSaida');
 
-  // Fechar modal de entradas antes de abrir o modal de exclusão
-  const entradasModal = bootstrap.Modal.getInstance(
-    document.getElementById("entradasModal")
-  );
-  if (entradasModal) {
-    entradasModal.hide();
+  if (produtoIdInput) {
+    produtoIdInput.value = id;
   }
 
-  const modalExcluirEntrada = new bootstrap.Modal(
-    document.getElementById("modalExcluirEntrada")
-  );
-  modalExcluirEntrada.show();
+  if (precoInput) {
+    precoInput.value = formatarPrecoParaInput(produto.preco);
+  }
 
-  // Adicionar listener para quando o modal de exclusão for fechado
-  document.getElementById("modalExcluirEntrada").addEventListener(
-    "hidden.bs.modal",
-    function () {
-      fecharTodosModais();
-      removerBackdrops();
-    },
-    { once: true }
-  );
+  const modalSaida = new bootstrap.Modal(document.getElementById('modalSaida'));
+  modalSaida.show();
 }
-
-document.getElementById("categoria").addEventListener("change", function () {
-  alterarTabelaPorCategoriaSelecionada(produtos);
-});
-
-document
-  .getElementById("clienteNaoCadastrado")
-  .addEventListener("change", function () {
-    const clienteInput = document.getElementById("cliente");
-
-    if (this.checked) {
-      clienteInput.readOnly = true; // Torna o campo somente leitura
-      clienteInput.value = null; // Defina o valor desejado
-    } else {
-      clienteInput.readOnly = false; // Atualiza o campo oculto com o valor do input
-    }
-  });
 
 // Funções de gerenciamento de categorias
 function editarCategoria(id) {
@@ -1513,7 +1393,7 @@ function editarCategoria(id) {
     return;
   }
 
-  // Preenche os campos do modal de edição
+  // Preencher campos do formulário
   document.getElementById("idCategoriaEditar").value = id;
   document.getElementById("nomeCategoriaEditar").value = categoria.nome;
   document.getElementById("descricaoCategoriaEditar").value =
@@ -1846,7 +1726,7 @@ async function atualizarDadosEntrada() {
     entradasFiltradas = [...entradas];
 
     // Atualiza as visualizações
-    mostrarPaginaEntradas(paginaAtualEntradas);
+    mostrarPaginaEntradas(1);
     mostrarPagina(paginaAtual);
   } catch (error) {
     console.error("Erro ao atualizar dados de entrada:", error);
@@ -1879,7 +1759,7 @@ async function atualizarDadosSaida() {
     saidasFiltradas = [...saidas];
 
     // Atualiza as visualizações
-    mostrarPaginaSaidas(paginaAtualSaidas);
+    mostrarPaginaSaidas(1);
     mostrarPagina(paginaAtual);
   } catch (error) {
     console.error("Erro ao atualizar dados de saída:", error);
@@ -1956,8 +1836,8 @@ if (formExcluirProduto) {
 
       // Atualiza todas as visualizações
       mostrarPagina(paginaAtual);
-      mostrarPaginaEntradas(paginaAtualEntradas);
-      mostrarPaginaSaidas(paginaAtualSaidas);
+      mostrarPaginaEntradas(1);
+      mostrarPaginaSaidas(1);
 
       exibirMensagemTemporariaSucesso(
         "Produto e seus registros excluídos com sucesso!"
@@ -2203,3 +2083,324 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 });
+
+function buscarEntrada() {
+  const termo = document.getElementById('buscarEntrada').value.toLowerCase();
+  
+  entradasFiltradas = entradas.filter(entrada => {
+    const fornecedor = fornecedores.find(f => f.id === entrada.idFornecedores);
+    const produto = produtos.find(p => p.id === entrada.idProdutos);
+    
+    return (fornecedor && fornecedor.nome.toLowerCase().includes(termo)) ||
+           (produto && produto.nome.toLowerCase().includes(termo)) ||
+           entrada.quantidade.toString().includes(termo) ||
+           entrada.preco.toString().includes(termo);
+  });
+  
+  mostrarPaginaEntradas(1);
+}
+
+function filtrarEntradasPorData() {
+  const dataFiltro = document.getElementById('dataFiltroEntrada').value;
+  
+  if (!dataFiltro) {
+    entradasFiltradas = [...entradas];
+  } else {
+    const dataFiltroObj = new Date(dataFiltro);
+    dataFiltroObj.setHours(0, 0, 0, 0);
+    
+    entradasFiltradas = entradas.filter(entrada => {
+      const dataEntrada = new Date(entrada.created_at);
+      dataEntrada.setHours(0, 0, 0, 0);
+      return dataEntrada.getTime() === dataFiltroObj.getTime();
+    });
+  }
+  
+  mostrarPaginaEntradas(1);
+}
+
+function editarProduto(id) {
+  console.log('Editando produto:', id);
+  const produto = produtos.find(p => p.id === id);
+  if (!produto) {
+    console.error('Produto não encontrado');
+    return;
+  }
+  
+  console.log('Dados do produto:', produto);
+
+  // Preencher campos básicos
+  document.getElementById('idProdutoUpdate').value = produto.id;
+  document.getElementById('codigoProdutoEditar').value = produto.codigo_produto || '';
+  document.getElementById('nomeProduto').value = produto.nome || '';
+  document.getElementById('descricaoProduto').value = produto.descricao || '';
+  
+  // Formatar e preencher o preço
+  const precoInput = document.getElementById('precoProduto');
+  if (precoInput) {
+    const precoFormatado = formatarPrecoParaExibicao(produto.preco);
+    console.log('Preço original:', produto.preco);
+    console.log('Preço formatado:', precoFormatado);
+    precoInput.value = precoFormatado;
+  }
+
+  // Preencher categoria
+  const selectCategoria = document.getElementById('categoriaProdutoEditar');
+  if (selectCategoria) {
+    selectCategoria.value = produto.idCategoria || '';
+    console.log('Categoria selecionada:', produto.idCategoria);
+  }
+  
+  // Preencher unidade de medida
+  const selectUnidade = document.getElementById('unidadeProdutoEditar');
+  if (selectUnidade) {
+    selectUnidade.value = produto.unidade_medida || 'UN';
+    console.log('Unidade selecionada:', produto.unidade_medida);
+  }
+  
+  // Mostrar imagem atual do produto
+  const preview = document.getElementById('previewImagemEditar');
+  if (preview) {
+    if (produto.imagem) {
+      preview.src = produto.imagem;
+      preview.style.display = 'block';
+    } else {
+      preview.style.display = 'none';
+    }
+  }
+
+  const modal = new bootstrap.Modal(document.getElementById('modalEditar'));
+  modal.show();
+}
+
+function excluirSaida(id) {
+  const saida = saidas.find(s => s.id === id);
+  if (!saida) return;
+
+  document.getElementById('idSaidaExcluir').value = id;
+  
+  // Armazenar informações da saída para atualização do estoque
+  const saidaExcluir = document.getElementById('saidaExcluir');
+  if (saidaExcluir) {
+    saidaExcluir.dataset.produtoId = saida.idProdutos;
+    saidaExcluir.dataset.quantidade = saida.quantidade;
+  }
+
+  const modalExcluirSaida = new bootstrap.Modal(document.getElementById('modalExcluirSaida'));
+  modalExcluirSaida.show();
+}
+
+function confirmarExclusaoSaida() {
+  const id = document.getElementById('idSaidaExcluir').value;
+  const saidaExcluir = document.getElementById('saidaExcluir');
+  const produtoId = saidaExcluir?.dataset.produtoId;
+  const quantidade = saidaExcluir?.dataset.quantidade;
+
+  $.ajax({
+    url: `${BASE_URL}/estoque-sd`,
+    type: 'POST',
+    data: {
+      idSaidaExcluir: id,
+      idProdutos: produtoId,
+      quantidade: quantidade
+    },
+    success: function(response) {
+      try {
+        if (typeof response === 'string') {
+          response = JSON.parse(response);
+        }
+        
+        if (response.type === 'success') {
+          const modalExcluirSaida = bootstrap.Modal.getInstance(document.getElementById('modalExcluirSaida'));
+          if (modalExcluirSaida) {
+            modalExcluirSaida.hide();
+          }
+
+          // Atualizar dados
+          fetchSaidas().then(() => {
+            saidasFiltradas = [...saidas];
+            mostrarPaginaSaidas(1);
+          });
+          
+          fetchProdutos().then(() => {
+            produtos = response.produtos;
+            produtosFiltrados = [...produtos];
+            mostrarPagina(1);
+          });
+
+          exibirMensagemTemporariaSucesso(response.message);
+        } else {
+          exibirMensagemTemporariaErro(response.message);
+        }
+      } catch (e) {
+        console.error('Erro ao processar resposta:', e);
+        exibirMensagemTemporariaErro("Erro ao processar a resposta do servidor");
+      }
+    },
+    error: function(xhr, status, error) {
+      console.error("Erro ao excluir saída:", error);
+      exibirMensagemTemporariaErro("Erro ao excluir saída");
+    }
+  });
+}
+
+// Função para mostrar a página de saídas
+function mostrarPaginaSaidas(pagina) {
+    const inicio = (pagina - 1) * CONFIG.itensPorPagina;
+    const fim = inicio + CONFIG.itensPorPagina;
+    const tbody = document.getElementById('corpoTabelaSaidas');
+
+    if (!tbody) {
+        console.error('Elemento corpoTabelaSaidas não encontrado');
+        return;
+    }
+
+    let html = '';
+    if (!Array.isArray(saidasFiltradas) || saidasFiltradas.length === 0) {
+        html = '<tr><td colspan="6" class="text-center">Nenhuma saída encontrada.</td></tr>';
+    } else {
+        html = saidasFiltradas.slice(inicio, fim).map(saida => {
+            try {
+                const cliente = clientes.find(c => parseInt(c.id) === parseInt(saida.idClientes));
+                const produto = produtos.find(p => parseInt(p.id) === parseInt(saida.idProdutos));
+
+                return `<tr>
+                    <td>${cliente?.nome || 'Cliente não encontrado'}</td>
+                    <td>${produto?.nome || 'Produto não encontrado'}</td>
+                    <td>${saida.quantidade}</td>
+                    <td>${formatarPrecoParaExibicao(saida.preco)}</td>
+                    <td>${formatarData(saida.created_at)}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" onclick="editarSaida(${saida.id})">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="excluirSaida(${saida.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>`;
+            } catch (error) {
+                console.error('Erro ao processar saída:', error, saida);
+                return '<tr><td colspan="6" class="text-center text-danger">Erro ao processar saída</td></tr>';
+            }
+        }).join('');
+    }
+
+    tbody.innerHTML = html;
+
+    // Configurar paginação
+    configurarPaginacao(saidasFiltradas.length, mostrarPaginaSaidas, '#paginacaoSaidas', pagina);
+}
+
+// Função para editar saída
+function editarSaida(id) {
+    console.log('Editando saída:', id);
+    const saida = saidas.find(s => s.id === id);
+    if (!saida) {
+        console.error('Saída não encontrada');
+        return;
+    }
+    
+    console.log('Dados da saída:', saida);
+
+    // Preencher campos do formulário
+    document.getElementById('idEditarSaida').value = id;
+    
+    // Buscar e preencher informações do produto
+    const produto = produtos.find(p => p.id === saida.idProdutos);
+    if (produto) {
+        document.getElementById('saidaProduto').value = produto.nome;
+    }
+    
+    // Preencher quantidade
+    document.getElementById('saidaQuantidade').value = saida.quantidade;
+    
+    // Preencher preços
+    const precoAtual = document.getElementById('saidaPrecoAtual');
+    const precoNovo = document.getElementById('saidaPreco');
+    
+    if (precoAtual) {
+        precoAtual.value = formatarPrecoParaExibicao(saida.preco);
+    }
+    
+    if (precoNovo) {
+        precoNovo.value = formatarPrecoParaExibicao(saida.preco);
+    }
+
+    // Mostrar modal
+    const modalEditarSaida = new bootstrap.Modal(document.getElementById('modalEditarSaida'));
+    modalEditarSaida.show();
+}
+
+// Função para buscar saídas
+function buscarSaida() {
+    const termo = document.getElementById('buscarSaida').value.toLowerCase();
+    
+    saidasFiltradas = saidas.filter(saida => {
+        const cliente = clientes.find(c => c.id === saida.idClientes);
+        const produto = produtos.find(p => p.id === saida.idProdutos);
+        
+        return (cliente && cliente.nome.toLowerCase().includes(termo)) ||
+               (produto && produto.nome.toLowerCase().includes(termo)) ||
+               saida.quantidade.toString().includes(termo) ||
+               saida.preco.toString().includes(termo);
+    });
+    
+    mostrarPaginaSaidas(1);
+}
+
+// Função para filtrar saídas por data
+function filtrarSaidasPorData() {
+    const dataFiltro = document.getElementById('dataFiltroSaida').value;
+    
+    if (!dataFiltro) {
+        saidasFiltradas = [...saidas];
+    } else {
+        const dataFiltroObj = new Date(dataFiltro);
+        dataFiltroObj.setHours(0, 0, 0, 0);
+        
+        saidasFiltradas = saidas.filter(saida => {
+            const dataSaida = new Date(saida.created_at);
+            dataSaida.setHours(0, 0, 0, 0);
+            return dataSaida.getTime() === dataFiltroObj.getTime();
+        });
+    }
+    
+    mostrarPaginaSaidas(1);
+}
+
+function editarSaida(id) {
+    console.log('Editando saída:', id);
+    const saida = saidas.find(s => s.id === id);
+    if (!saida) {
+        console.error('Saída não encontrada');
+        return;
+    }
+    
+    console.log('Dados da saída:', saida);
+
+    // Preencher campos do formulário
+    document.getElementById('idEditarSaida').value = id;
+    
+    // Buscar e preencher informações do produto
+    const produto = produtos.find(p => p.id === saida.idProdutos);
+    if (produto) {
+        document.getElementById('saidaProduto').value = produto.nome;
+    }
+    
+    // Preencher quantidade e preço
+    document.getElementById('saidaQuantidade').value = saida.quantidade;
+    
+    // Formatar e preencher o preço
+    const precoInput = document.getElementById('saidaPreco');
+    if (precoInput) {
+        const precoFormatado = formatarPrecoParaExibicao(saida.preco);
+        console.log('Preço original:', saida.preco);
+        console.log('Preço formatado:', precoFormatado);
+        precoInput.value = precoFormatado;
+    }
+
+    // Mostrar modal
+    const modalEditarSaida = new bootstrap.Modal(document.getElementById('modalEditarSaida'));
+    modalEditarSaida.show();
+}

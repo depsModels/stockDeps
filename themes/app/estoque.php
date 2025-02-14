@@ -122,7 +122,7 @@ $this->layout("_theme");
                     <h5 class="modal-title">Editar Produto</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="produto-update" name="produto-update" action="<?= url('app/estoque-pu'); ?>" method="post" enctype="multipart/form-data" onsubmit="return false;">
+                <form id="produto-update" method="post" enctype="multipart/form-data">
                     <div class="modal-body">
                         <input type="hidden" name="idProdutoUpdate" id="idProdutoUpdate">
                         <div class="mb-3">
@@ -144,7 +144,7 @@ $this->layout("_theme");
                         </div>
                         <div class="mb-3">
                             <label for="precoProduto" class="form-label">Preço</label>
-                            <input name="preco" type="text" class="form-control" id="precoProduto" value="0,00" data-tipo="preco">
+                            <input name="preco" type="text" class="form-control" id="precoProduto" data-tipo="preco">
                             <small id="precoHelp" class="form-text text-muted">Digite o valor do produto com separação de milhar (ex: R$ 1.000,00).</small>
                         </div>
                         <div class="mb-3">
@@ -159,14 +159,16 @@ $this->layout("_theme");
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label for="fotoProduto" class="form-label">Foto do Produto</label>
-                            <input name="image" type="file" id="fotoProduto" class="form-control">
-                            <img id="previewImagem" src="" alt="Imagem do Produto" style="max-width: 150px; display: none; margin:10px auto; display: block;">
+                            <label for="fotoProdutoEditar" class="form-label">Foto do Produto</label>
+                            <input name="image" type="file" id="fotoProdutoEditar" class="form-control" onchange="previewImagemEditar(this)">
+                            <div class="mt-2 text-center">
+                                <img id="previewImagemEditar" src="" alt="Preview da Imagem" style="max-width: 200px; max-height: 200px; display: none;">
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                        <button type="submit" class="btn btn-primary">Salvar alterações</button>
                     </div>
                 </form>
             </div>
@@ -287,7 +289,6 @@ $this->layout("_theme");
             </div>
         </div>
     </div>
-
 
     <!-- Modal Excluir -->
     <div class="modal fade" id="modalExcluir" tabindex="-1" aria-labelledby="modalExcluirLabel" aria-hidden="true">
@@ -428,17 +429,13 @@ $this->layout("_theme");
                 </div>
                 <div class="modal-body">
                     <div class="row mb-3">
-                        <div class="col-md-4">
-                            <label for="dataInicialEntrada" class="form-label">Data Inicial</label>
-                            <input type="date" class="form-control" id="dataInicialEntrada" onchange="filtrarEntradasPorData()">
+                        <div class="col-md-8">
+                            <label for="buscarEntrada" class="form-label">Buscar</label>
+                            <input type="text" class="form-control" id="buscarEntrada" placeholder="Digite para buscar..." oninput="buscarEntrada()">
                         </div>
                         <div class="col-md-4">
-                            <label for="dataFinalEntrada" class="form-label">Data Final</label>
-                            <input type="date" class="form-control" id="dataFinalEntrada" onchange="filtrarEntradasPorData()">
-                        </div>
-                        <div class="col-md-4">
-                            <label for="buscarEntrada" class="form-label">Buscar Produto</label>
-                            <input type="text" class="form-control" id="buscarEntrada" placeholder="Digite o nome do produto" oninput="buscarEntrada()">
+                            <label for="dataFiltroEntrada" class="form-label">Filtrar por Data</label>
+                            <input type="date" class="form-control" id="dataFiltroEntrada" onchange="filtrarEntradasPorData()">
                         </div>
                     </div>
 
@@ -468,6 +465,52 @@ $this->layout("_theme");
         </div>
     </div>
 
+    <!-- Modal de Saídas -->
+    <div class="modal fade" id="saidasModal" tabindex="-1" aria-labelledby="saidasModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="saidasModalLabel">Saídas</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label for="buscarSaida" class="form-label">Buscar</label>
+                            <input type="text" class="form-control" id="buscarSaida" placeholder="Digite para buscar..." oninput="buscarSaida()">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="dataFiltroSaida" class="form-label">Filtrar por Data</label>
+                            <input type="date" class="form-control" id="dataFiltroSaida" onchange="filtrarSaidasPorData()">
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Produto</th>
+                                    <th>Quantidade</th>
+                                    <th>Preço</th>
+                                    <th>Data</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="corpoTabelaSaidas">
+                            </tbody>
+                        </table>
+                    </div>
+                    <div>
+                        <nav>
+                            <ul class="pagination justify-content-center" id="paginacaoSaidas"></ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Editar Entradas -->
     <div class="modal fade" id="modalEditarEntrada" tabindex="-1" aria-labelledby="modalEditarEntradaLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -480,15 +523,6 @@ $this->layout("_theme");
                     <form id="entrada-editar" method="post">
                         <input name="idEntradaEditar" id="idEntradaEditar" type="hidden">
                         
-                        <!-- Fornecedor -->
-                        <div class="mb-3 fornecedor-wrapper">
-                            <label for="entradaFornecedor" class="form-label">Fornecedor</label>
-                            <input name="fornecedor" type="text" class="form-control" id="entradaFornecedor" placeholder="Digite o nome do fornecedor" autocomplete="off">
-                            <input type="hidden" id="idFornecedor" name="idFornecedor">
-                            <div class="sugestoes-fornecedores" style="display: none; position: absolute; width: 100%; max-height: 200px; overflow-y: auto; background: white; border: 1px solid #ddd; border-radius: 4px; z-index: 1000;">
-                            </div>
-                        </div>
-
                         <!-- Nome do Produto -->
                         <div class="mb-3">
                             <label for="entradaProduto" class="form-label">Produto</label>
@@ -604,7 +638,8 @@ $this->layout("_theme");
                         <!-- Preço -->
                         <div class="mb-3">
                             <label for="saidaPreco" class="form-label">Preço</label>
-                            <input name="preco" type="number" class="form-control" id="saidaPreco" min="0" step="0.001">
+                            <input name="preco" type="text" class="form-control" id="saidaPreco" value="0,00" data-tipo="preco" required>
+                            <small id="precoHelp" class="form-text text-muted">Digite o valor do produto com separação de milhar (ex: R$ 1.000,00).</small>
                         </div>
                 </div>
                 <div class="modal-footer">
@@ -646,16 +681,15 @@ $this->layout("_theme");
                     <h5 class="modal-title" id="modalExcluirSaidaLabel">Excluir Saída</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
-                <form id="saida-excluir" method="post">
-                    <div class="modal-body">
-                        <p>Tem certeza de que deseja excluir esta saída?</p>
-                        <input type="hidden" id="idSaidaExcluir" name="idSaidaExcluir"> <!-- Campo oculto para armazenar o id -->
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-danger">Excluir</button>
-                    </div>
-                </form>
+                <div class="modal-body">
+                    <p>Tem certeza que deseja excluir esta saída?</p>
+                    <input type="hidden" id="idSaidaExcluir">
+                    <div id="saidaExcluir" data-produto-id="" data-quantidade=""></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmarExclusaoSaida()">Excluir</button>
+                </div>
             </div>
         </div>
     </div>

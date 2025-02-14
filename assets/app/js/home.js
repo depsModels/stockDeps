@@ -239,28 +239,62 @@ function calcularLucroLiquido(entradas, saidas) {
 }
 
 async function calcularValorEstoque() {
-  try {
-    const produtosResponse = await fetch(`${BASE_URL}/getProdutos`);
-    const entradasResponse = await fetch(`${BASE_URL}/getEntradas`);
-    const produtos = await produtosResponse.json();
-    const entradas = await entradasResponse.json();
+    try {
+        const produtosResponse = await fetch(`${BASE_URL}/getProdutos`);
+        const entradasResponse = await fetch(`${BASE_URL}/getEntradas`);
+        const produtos = await produtosResponse.json();
+        const entradas = await entradasResponse.json();
 
-    let valorTotal = 0;
+        let valorTotal = 0;
 
-    produtos.forEach(produto => {
-      const entradasProduto = entradas.filter(e => e.idProdutos === produto.id);
+        produtos.forEach(produto => {
+            // Só calcula se tiver quantidade em estoque
+            if (produto.quantidade > 0) {
+                // Pegar todas as entradas deste produto
+                const entradasProduto = entradas.filter(e => e.idProdutos === produto.id);
+                
+                if (entradasProduto.length > 0) {
+                    // Calcula o preço médio ponderado das entradas
+                    const totalValorEntradas = entradasProduto.reduce((total, entrada) => 
+                        total + (parseFloat(entrada.preco) * parseFloat(entrada.quantidade)), 0);
+                    const totalQuantidadeEntradas = entradasProduto.reduce((total, entrada) => 
+                        total + parseFloat(entrada.quantidade), 0);
+                    const precoMedioPonderado = totalValorEntradas / totalQuantidadeEntradas;
 
-      if (entradasProduto.length > 0) {
-        const precoMedio = entradasProduto.reduce((total, entrada) => total + (entrada.preco * entrada.quantidade), 0) /
-          entradasProduto.reduce((total, entrada) => total + entrada.quantidade, 0);
-        valorTotal += produto.quantidade * precoMedio;
-      }
-    });
+                    // Multiplica a quantidade atual pelo preço médio de compra
+                    const valorProduto = parseFloat(produto.quantidade) * precoMedioPonderado;
+                    
+                    console.log(`Calculando valor investido em ${produto.nome}:`, {
+                        quantidade_atual: produto.quantidade,
+                        preco_medio_compra: precoMedioPonderado.toLocaleString('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL'
+                        }),
+                        valor_investido: valorProduto.toLocaleString('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL'
+                        })
+                    });
+                    
+                    valorTotal += valorProduto;
+                } else {
+                    console.warn(`Produto ${produto.nome} tem estoque mas não tem entradas registradas`);
+                }
+            }
+        });
 
-    document.getElementById('valor-estoque').textContent = `R$ ${valorTotal.toFixed(2)}`;
-  } catch (error) {
-    console.error("Erro ao calcular o valor total do estoque:", error);
-  }
+        // Formatar o valor total com separadores de milhares
+        const valorFormatado = valorTotal.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        });
+        
+        console.log('Valor total investido em estoque:', valorFormatado);
+        document.getElementById('valor-estoque').textContent = valorFormatado;
+    } catch (error) {
+        console.error("Erro ao calcular o valor total do estoque:", error);
+        document.getElementById('valor-estoque').textContent = 'Erro ao calcular';
+    }
 }
 
 function calcularLucroPorPeriodo(periodo) {
