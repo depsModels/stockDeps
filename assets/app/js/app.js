@@ -1,4 +1,3 @@
-const BASE_URL = 'https://stockdeps.com/app';
 let produtosOriginais = [];
 let paginaAtualEntradas = 1;
 let paginaAtualSaidas = 1;
@@ -34,7 +33,7 @@ const cache = {
     this.fornecedores.clear();
     this.clientes.clear();
     this.searchResults.clear();
-  },
+  }
 };
 
 // State variables
@@ -148,7 +147,7 @@ function setupEventListeners() {
 async function fetchProdutos() {
   performanceMetrics.startMeasure("fetchProdutos");
   try {
-    const response = await fetch(`${BASE_URL}/getProdutos`);
+    const response = await fetch(`${window.location.origin + '/app'}/getProdutos`);
     produtosOriginais = (await response.json()) || [];
     produtos = [...produtosOriginais];
 
@@ -178,7 +177,7 @@ async function fetchProdutos() {
 
 async function fetchFornecedores() {
   try {
-    const response = await fetch(`${BASE_URL}/getFornecedores`);
+    const response = await fetch(`${window.location.origin + '/app'}/getFornecedores`);
     fornecedores = (await response.json()) || [];
     cache.fornecedores.clear();
     fornecedores.forEach((f) => cache.fornecedores.set(f.id, f));
@@ -190,7 +189,7 @@ async function fetchFornecedores() {
 
 async function fetchClientes() {
   try {
-    const response = await fetch(`${BASE_URL}/getClientes`);
+    const response = await fetch(`${window.location.origin + '/app'}/getClientes`);
     clientes = (await response.json()) || [];
     cache.clientes.clear();
     clientes.forEach((c) => cache.clientes.set(c.id, c));
@@ -200,7 +199,7 @@ async function fetchClientes() {
 }
 
 async function fetchCategorias() {
-  const response = await fetch(`${BASE_URL}/getCategorias`);
+  const response = await fetch(`${window.location.origin + '/app'}/getCategorias`);
   categorias = await response.json();
   preencherCategorias(categorias, () => alterarTabelaPorCategoriaSelecionada());
   renderizarTabela(categorias);
@@ -212,7 +211,7 @@ async function fetchEntradas() {
     // Primeiro, carregar dados necessários
     await Promise.all([fetchProdutos(), fetchFornecedores()]);
 
-    const response = await fetch(`${BASE_URL}/getEntradas`);
+    const response = await fetch(`${window.location.origin + '/app'}/getEntradas`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -244,7 +243,7 @@ async function fetchEntradas() {
 async function fetchSaidas() {
   performanceMetrics.startMeasure("fetchSaidas");
   try {
-    const response = await fetch(`${BASE_URL}/getSaidas`);
+    const response = await fetch(`${window.location.origin + '/app'}/getSaidas`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -1462,7 +1461,7 @@ document.addEventListener("DOMContentLoaded", function () {
       try {
         const response = await $.ajax({
           type: "POST",
-          url: `${BASE_URL}/categoria-update`,
+          url: `${window.location.origin + '/app'}/categoria-update`,
           data: formData,
           processData: false,
           contentType: false,
@@ -1497,7 +1496,7 @@ document.addEventListener("DOMContentLoaded", function () {
       try {
         const response = await $.ajax({
           type: "POST",
-          url: `${BASE_URL}/categoria-delete`,
+          url: `${window.location.origin + '/app'}/categoria-delete`,
           data: { id: id },
           dataType: "json",
         });
@@ -1540,7 +1539,7 @@ document.addEventListener("DOMContentLoaded", function () {
       try {
         const response = await $.ajax({
           type: "POST",
-          url: `${BASE_URL}/estoque-ed`,
+          url: `${window.location.origin + '/app'}/estoque-ed`,
           data: { id: id },
           dataType: "json",
         });
@@ -1578,7 +1577,7 @@ document.addEventListener("DOMContentLoaded", function () {
       try {
         const response = await $.ajax({
           type: "POST",
-          url: `${BASE_URL}/estoque-eu`,
+          url: `${window.location.origin + '/app'}/estoque-eu`,
           data: formData,
           processData: false,
           contentType: false,
@@ -1612,7 +1611,7 @@ document.addEventListener("DOMContentLoaded", function () {
       try {
         const response = await $.ajax({
           type: "POST",
-          url: `${BASE_URL}/estoque-sd`,
+          url: `${window.location.origin + '/app'}/estoque-sd`,
           data: { id: id },
           dataType: "json",
         });
@@ -1650,7 +1649,7 @@ document.addEventListener("DOMContentLoaded", function () {
       try {
         const response = await $.ajax({
           type: "POST",
-          url: `${BASE_URL}/estoque-su`,
+          url: `${window.location.origin + '/app'}/estoque-su`,
           data: formData,
           processData: false,
           contentType: false,
@@ -1703,8 +1702,8 @@ async function atualizarDadosEntrada() {
   try {
     // Busca dados atualizados
     const [entradasResponse, produtosResponse] = await Promise.all([
-      fetch(`${BASE_URL}/getEntradas`),
-      fetch(`${BASE_URL}/getProdutos`),
+      fetch(`${window.location.origin + '/app'}/getEntradas`),
+      fetch(`${window.location.origin + '/app'}/getProdutos`),
     ]);
 
     if (!entradasResponse.ok || !produtosResponse.ok) {
@@ -1736,8 +1735,8 @@ async function atualizarDadosSaida() {
   try {
     // Busca dados atualizados
     const [saidasResponse, produtosResponse] = await Promise.all([
-      fetch(`${BASE_URL}/getSaidas`),
-      fetch(`${BASE_URL}/getProdutos`),
+      fetch(`${window.location.origin + '/app'}/getSaidas`),
+      fetch(`${window.location.origin + '/app'}/getProdutos`),
     ]);
 
     if (!saidasResponse.ok || !produtosResponse.ok) {
@@ -1779,7 +1778,7 @@ if (formExcluirProduto) {
 
       // Exclui entradas
       for (const entrada of entradasDoProduto) {
-        await fetch(`${BASE_URL}/estoque-ed`, {
+        await fetch(`${window.location.origin + '/app'}/estoque-ed`, {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -1790,7 +1789,7 @@ if (formExcluirProduto) {
 
       // Exclui saídas
       for (const saida of saidasDoProduto) {
-        await fetch(`${BASE_URL}/estoque-sd`, {
+        await fetch(`${window.location.origin + '/app'}/estoque-sd`, {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -1800,7 +1799,7 @@ if (formExcluirProduto) {
       }
 
       // Agora exclui o produto
-      const response = await fetch(`${BASE_URL}/produto-delete`, {
+      const response = await fetch(`${window.location.origin + '/app'}/produto-delete`, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -1951,7 +1950,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Atualizar a função fetchFornecedores para preencher as sugestões após carregar
 async function fetchFornecedores() {
   try {
-    const response = await fetch(`${BASE_URL}/getFornecedores`);
+    const response = await fetch(`${window.location.origin + '/app'}/getFornecedores`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -2197,7 +2196,7 @@ function confirmarExclusaoSaida() {
   const quantidade = saidaExcluir?.dataset.quantidade;
 
   $.ajax({
-    url: `${BASE_URL}/estoque-sd`,
+    url: `${window.location.origin + '/app'}/estoque-sd`,
     type: 'POST',
     data: {
       idSaidaExcluir: id,

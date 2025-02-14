@@ -9,80 +9,61 @@ let ordemAtualFornecedores = { coluna: null, crescente: true };
 
 async function fetchProdutos() {
     try {
-        const response = await fetch(`${BASE_URL}/getProdutos`, DEFAULT_FETCH_OPTIONS);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        produtos = await response.json();
+        const response = await fetch(`${window.location.origin + '/app'}/getProdutos`);
+        return await response.json();
     } catch (error) {
-        handleApiError(error, 'getProdutos');
+        console.error('Erro ao buscar produtos:', error);
     }
 }
 
 async function fetchCategorias() {
     try {
-        const response = await fetch(`${BASE_URL}/getCategorias`, DEFAULT_FETCH_OPTIONS);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        categorias = await response.json();
+        const response = await fetch(`${window.location.origin + '/app'}/getCategorias`);
+        return await response.json();
     } catch (error) {
-        handleApiError(error, 'getCategorias');
+        console.error('Erro ao buscar categorias:', error);
     }
 }
 
 async function fetchClientes() {
     try {
-        const response = await fetch(`${BASE_URL}/getClientes`, DEFAULT_FETCH_OPTIONS);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        clientes = await response.json();
+        const response = await fetch(`${window.location.origin + '/app'}/getClientes`);
+        return await response.json();
     } catch (error) {
-        handleApiError(error, 'getClientes');
+        console.error('Erro ao buscar clientes:', error);
     }
 }
 
 async function fetchSaidas() {
     try {
-        const response = await fetch(`${BASE_URL}/getSaidas`, DEFAULT_FETCH_OPTIONS);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        saidas = await response.json();
+        const response = await fetch(`${window.location.origin + '/app'}/getSaidas`);
+        return await response.json();
     } catch (error) {
-        handleApiError(error, 'getSaidas');
+        console.error('Erro ao buscar saídas:', error);
     }
 }
 
 async function fetchFornecedores() {
     try {
-        const response = await fetch(`${BASE_URL}/getFornecedores`, DEFAULT_FETCH_OPTIONS);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        fornecedores = await response.json();
+        const response = await fetch(`${window.location.origin + '/app'}/getFornecedores`);
+        const data = await response.json();
+        fornecedores = data;
         fornecedoresFiltrados = [...fornecedores];
         aplicarOrdenacaoFornecedores();
         mostrarPaginaFornecedores(paginaAtualFornecedores);
-        buscarFornecedor()
+        buscarFornecedor();
+        return data;
     } catch (error) {
-        console.error('Erro em fetchFornecedores:', error);
-        fornecedores = [];
-        fornecedoresFiltrados = [];
-        mostrarPaginaFornecedores(1);
+        console.error('Erro ao buscar fornecedores:', error);
     }
 }
 
 async function fetchEntradas() {
     try {
-        const response = await fetch(`${BASE_URL}/getEntradas`, DEFAULT_FETCH_OPTIONS);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        entradas = await response.json();
+        const response = await fetch(`${window.location.origin + '/app'}/getEntradas`);
+        return await response.json();
     } catch (error) {
-        handleApiError(error, 'getEntradas');
+        console.error('Erro ao buscar entradas:', error);
     }
 }
 
@@ -223,7 +204,7 @@ function editarFornecedor(id) {
 }
 
 function verHistoricoFornecedor(id, fornecedores) {
-    window.location.href = `${BASE_URL}/historicoFornecedor/${id}`;
+    window.location.href = `${window.location.origin + '/app'}/historicoFornecedor/${id}`;
 }
 
 function abrirModal() {

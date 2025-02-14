@@ -1,42 +1,58 @@
-const BASE_URL = 'https://www.stockDeps.com/app';
-
 const itensPorPaginaClientes = 8;   // Quantidade de clientes por página
 const maxBotoesPaginacaoClientes = 5;
-let paginaAtualClientes = 1;        // Sempre começar na página 1
-
+let paginaAtualClientes = 1;
+let clientesFiltrados = [];
 let clientes = [];
-let produtos = [];
-let saidas = [];
-let categorias = [];
 
 async function fetchProdutos() {
-    const response = await fetch(`${BASE_URL}/getProdutos`);
-    produtos = await response.json();
+    try {
+        const response = await fetch(`${window.location.origin + '/app'}/getProdutos`);
+        return await response.json();
+    } catch (error) {
+        console.error('Erro ao buscar produtos:', error);
+    }
 }
 
 async function fetchCategorias() {
-    const response = await fetch(`${BASE_URL}/getCategorias`);
-    categorias = await response.json();
+    try {
+        const response = await fetch(`${window.location.origin + '/app'}/getCategorias`);
+        return await response.json();
+    } catch (error) {
+        console.error('Erro ao buscar categorias:', error);
+    }
 }
 
 async function fetchClientes() {
-    const response = await fetch(`${BASE_URL}/getClientes`);
-    clientes = await response.json();
-    clientesFiltrados = [...clientes];
-    aplicarOrdenacaoClientes();
-    mostrarPaginaClientes(paginaAtualClientes);
-    buscarCliente()
+    try {
+        const response = await fetch(`${window.location.origin + '/app'}/getClientes`);
+        const data = await response.json();
+        clientes = data;
+        clientesFiltrados = [...clientes];
+        aplicarOrdenacaoClientes();
+        mostrarPaginaClientes(paginaAtualClientes);
+        buscarCliente();
+        return data;
+    } catch (error) {
+        console.error('Erro ao buscar clientes:', error);
+    }
 }
 
 async function fetchEntradas() {
-    const response = await fetch(`${BASE_URL}/getEntradas`);
-    const entradas = await response.json();
+    try {
+        const response = await fetch(`${window.location.origin + '/app'}/getEntradas`);
+        return await response.json();
+    } catch (error) {
+        console.error('Erro ao buscar entradas:', error);
+    }
 }
 
 async function fetchSaidas() {
-    const response = await fetch(`${BASE_URL}/getSaidas`);
-    saidas = await response.json(); // Preenche a variável global saídas
-    console.log(saidas)
+    try {
+        const response = await fetch(`${window.location.origin + '/app'}/getSaidas`);
+        return await response.json();
+    } catch (error) {
+        console.error('Erro ao buscar saídas:', error);
+    }
 }
 
 function loadAllData() {
@@ -150,7 +166,6 @@ function buscarCliente() {
 }
 
 function abrirModalEditarCliente(id) {
-    console.log(clientes)
     const cliente = clientes.find(c => c.id === id);
     if (!cliente) {
         alert("Cliente não encontrado");
@@ -165,34 +180,38 @@ function abrirModalEditarCliente(id) {
     const modalEditar = new bootstrap.Modal(document.getElementById("modalEditarCliente"));
     modalEditar.show();
 }
+
 function abrirModalHistorico(id) {
     const modalHistorico = new bootstrap.Modal(document.getElementById("modalHistoricoCliente"));
 
     document.getElementById("historicoCliente").textContent = `Carregando histórico do cliente ID ${id}...`;
 
-    saidas.sort((a, b) => b.id - a.id);
+    const saidas = fetchSaidas();
+    saidas.then(saidas => {
+        saidas.sort((a, b) => b.id - a.id);
 
-    const saidasCliente = saidas.filter(saida => saida.idClientes === id);
+        const saidasCliente = saidas.filter(saida => saida.idClientes === id);
 
-    let htmlHistorico = '';
-    if (saidasCliente.length > 0) {
-        saidasCliente.forEach(saida => {
-            const produto = produtos.find(p => p.id === saida.idProdutos);
-            const categoria = produto ? categorias.find(c => c.id === produto.idCategoria) : null;
+        let htmlHistorico = '';
+        if (saidasCliente.length > 0) {
+            saidasCliente.forEach(saida => {
+                const produto = produtos.find(p => p.id === saida.idProdutos);
+                const categoria = produto ? categorias.find(c => c.id === produto.idCategoria) : null;
 
-            htmlHistorico += `
-                <p><strong>Produto:</strong> ${produto ? produto.nome : 'Desconhecido'} <br>
-                <strong>Categoria:</strong> ${categoria ? categoria.nome : 'Desconhecida'} <br>
-                <strong>Quantidade:</strong> ${saida.quantidade} <br>
-                <strong>Preço:</strong> ${saida.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} <br>
-                <strong>Data:</strong> ${new Date(saida.created_at).toLocaleDateString()}</p>
-            `;
-        });
-    } else {
-        htmlHistorico = '<p>Nenhuma saída registrada para este cliente.</p>';
-    }
+                htmlHistorico += `
+                    <p><strong>Produto:</strong> ${produto ? produto.nome : 'Desconhecido'} <br>
+                    <strong>Categoria:</strong> ${categoria ? categoria.nome : 'Desconhecida'} <br>
+                    <strong>Quantidade:</strong> ${saida.quantidade} <br>
+                    <strong>Preço:</strong> ${saida.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} <br>
+                    <strong>Data:</strong> ${new Date(saida.created_at).toLocaleDateString()}</p>
+                `;
+            });
+        } else {
+            htmlHistorico = '<p>Nenhuma saída registrada para este cliente.</p>';
+        }
 
-    document.getElementById("historicoCliente").innerHTML = htmlHistorico;
+        document.getElementById("historicoCliente").innerHTML = htmlHistorico;
+    });
 
     modalHistorico.show();
 }
@@ -257,7 +276,6 @@ function aplicarOrdenacaoClientes() {
             : (valorA < valorB ? 1 : valorA > valorB ? -1 : 0);
     });
 }
-
 
 document.getElementById("ordenarNomeCliente").addEventListener("click", () => ordenarTabelaClientes("nome", "setaNomeCliente"));
 
