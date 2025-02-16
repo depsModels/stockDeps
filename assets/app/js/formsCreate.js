@@ -79,34 +79,97 @@ const form_ec = $("#entrada-cadastro");
 form_ec.on("submit", function (e) {
     e.preventDefault();
 
-    const serializedData = form_ec.serialize();
+    // Criar FormData para enviar os dados
+    const formData = new FormData(this);
+    
+    // Garantir que o ID do fornecedor seja incluído
+    const idFornecedor = document.querySelector('#idFornecedor')?.value;
+    if (idFornecedor) {
+        formData.append('idFornecedores', idFornecedor); // Mudado para idFornecedores para match com o backend
+        
+        // Adicionar o nome do fornecedor como 'nome'
+        const fornecedorNome = document.querySelector('#entradaFornecedor')?.value;
+        if (fornecedorNome) {
+            formData.append('nome', fornecedorNome);
+        }
+    }
+
+    // Log para debug
+    const formDataObj = {};
+    formData.forEach((value, key) => {
+        formDataObj[key] = value;
+    });
+    console.log('Dados da entrada sendo enviados:', formDataObj);
 
     $.ajax({
         type: "POST",
         url: `${BASE_URL}/estoque-ec`,
-        data: serializedData,
-        dataType: "json",
+        data: formData,
+        processData: false,
+        contentType: false,
         success: function (response) {
-            if (response.type === 'error') {
-                exibirMensagemTemporariaErro(response.message);
-                return;
-            }
-            if (response.type === 'warning') {
-                exibirMensagemTemporariaAviso(response.message);
-                return;
-            }
-            if (response.type === 'success') {
-                exibirMensagemTemporariaSucesso(response.message);
-                // Limpa os campos do formulário
-                limparCamposFormulario("#entrada-cadastro");
-                // Recarrega entradas e produtos
-                fetchEntradas();
-                fetchProdutos();
+            console.log('Resposta recebida:', response);
+            
+            try {
+                // Se a resposta for string, tentar fazer parse
+                if (typeof response === 'string') {
+                    response = JSON.parse(response);
+                }
+
+                if (response.type === 'error') {
+                    exibirMensagemTemporariaErro(response.message || "Erro ao processar a entrada.");
+                    return;
+                }
+                if (response.type === 'warning') {
+                    exibirMensagemTemporariaAviso(response.message || "Atenção ao processar a entrada.");
+                    return;
+                }
+                if (response.type === 'success') {
+                    // Fechar o modal de cadastro
+                    const modalCadastro = bootstrap.Modal.getInstance(document.getElementById('modalCadastrarEntrada'));
+                    if (modalCadastro) {
+                        modalCadastro.hide();
+                    }
+
+                    // Limpar campos
+                    limparCamposFormulario("#entrada-cadastro");
+                    
+                    // Atualizar dados
+                    fetchEntradas().then(() => {
+                        entradasFiltradas = [...entradas];
+                        mostrarPaginaEntradas(1);
+                    });
+                    
+                    fetchProdutos().then(() => {
+                        produtos = response.produtos;
+                        produtosFiltrados = [...produtos];
+                        mostrarPagina(1);
+                    });
+
+                    exibirMensagemTemporariaSucesso(response.message || "Entrada cadastrada com sucesso!");
+                }
+            } catch (e) {
+                console.error('Erro ao processar resposta:', e);
+                exibirMensagemTemporariaErro("Erro ao processar a resposta do servidor.");
             }
         },
         error: function (xhr, status, error) {
             console.error("Erro no AJAX:", error);
-            exibirMensagemTemporariaErro("Erro ao processar a solicitação.");
+            console.error("Status:", status);
+            console.error("Resposta do servidor:", xhr.responseText);
+            
+            let mensagemErro = "Erro ao processar a entrada.";
+            
+            try {
+                if (xhr.responseText) {
+                    const response = JSON.parse(xhr.responseText);
+                    mensagemErro = response.message || mensagemErro;
+                }
+            } catch (e) {
+                console.error('Erro ao processar mensagem de erro:', e);
+            }
+            
+            exibirMensagemTemporariaErro(mensagemErro);
         }
     });
 });
@@ -133,12 +196,32 @@ form_sc.on("submit", function (e) {
                 return;
             }
             if (response.type === 'success') {
+                // Fechar o modal de cadastro
+                const modalCadastro = bootstrap.Modal.getInstance(document.getElementById('modalCadastrarSaida'));
+                if (modalCadastro) {
+                    modalCadastro.hide();
+                }
+                
+                // Limpa os campos do formulário
+                limparCamposFormulario("#saida-cadastro");
+                
+                // Atualiza os dados usando o mesmo padrão do delete
+                fetchSaidas().then(() => {
+                    // Após buscar as saídas, atualiza a exibição
+                    saidasFiltradas = [...saidas];
+                    mostrarPaginaSaidas(1);
+                });
+                
+                // Atualiza produtos
+                fetchProdutos().then(() => {
+                    // Após buscar os produtos, atualiza a exibição
+                    produtosFiltrados = [...produtos];
+                    produtosOrdenados = [...produtos];
+                    mostrarPagina(1);
+                });
+                
+                // Exibe mensagem de sucesso
                 exibirMensagemTemporariaSucesso(response.message);
-                // Limpa apenas os campos específicos
-                limparCamposSaida();
-                // Recarrega saídas e produtos
-                fetchSaidas();
-                fetchProdutos();
             }
         },
         error: function (xhr, status, error) {
@@ -147,7 +230,6 @@ form_sc.on("submit", function (e) {
         }
     });
 });
-
 
 // Cadastro de clientes
 const form_cadastro_clientes = $("#cadastro-clientes");
@@ -184,7 +266,6 @@ form_cadastro_clientes.on("submit", function (e) {
         }
     });
 });
-
 
 // Cadastro de fornecedores
 const form_cadastro_fornecedores = $("#formAdicionarFornecedor");
@@ -276,4 +357,3 @@ function limparCamposSaida() {
     form.find("#clienteNaoCadastrado").prop('checked', false);
     form.find("#quantidadeSaida").val('');
 }
-

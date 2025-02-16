@@ -2,7 +2,6 @@
 $this->layout("_theme");
 ?>
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
 <link rel="stylesheet" href="<?= url('assets/app/css/estoque.css') ?>">
 
 <body>
@@ -87,13 +86,7 @@ $this->layout("_theme");
                         </div>
                         <div class="mb-3">
                             <label for="precoSaidaProdutoAdicionar" class="form-label">Preço para Saídas</label>
-                            <input
-                                name="preco"
-                                type="text"
-                                class="form-control"
-                                id="precoSaidaProdutoAdicionar"
-                                value="R$ 0,00"
-                                oninput="formatarPreco(this)">
+                            <input name="preco" type="text" class="form-control" id="precoSaidaProdutoAdicionar" value="0,00" data-tipo="preco">
                             <small id="precoHelp" class="form-text text-muted">Digite o valor do produto com separação de milhar (ex: R$ 1.000,00).</small>
                         </div>
                         <div class="mb-3">
@@ -129,7 +122,7 @@ $this->layout("_theme");
                     <h5 class="modal-title">Editar Produto</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="produto-update" name="produto-update" method="post" enctype="multipart/form-data">
+                <form id="produto-update" method="post" enctype="multipart/form-data">
                     <div class="modal-body">
                         <input type="hidden" name="idProdutoUpdate" id="idProdutoUpdate">
                         <div class="mb-3">
@@ -151,7 +144,7 @@ $this->layout("_theme");
                         </div>
                         <div class="mb-3">
                             <label for="precoProduto" class="form-label">Preço</label>
-                            <input name="preco" type="text" class="form-control" id="precoProduto" value="R$ 0,00" oninput="formatarPreco(this)">
+                            <input name="preco" type="text" class="form-control" id="precoProduto" data-tipo="preco">
                             <small id="precoHelp" class="form-text text-muted">Digite o valor do produto com separação de milhar (ex: R$ 1.000,00).</small>
                         </div>
                         <div class="mb-3">
@@ -166,14 +159,16 @@ $this->layout("_theme");
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label for="fotoProduto" class="form-label">Foto do Produto</label>
-                            <input name="image" type="file" id="fotoProduto" class="form-control">
-                            <img id="previewImagem" src="" alt="Imagem do Produto" style="max-width: 150px; display: none; margin:10px auto; display: block;">
+                            <label for="fotoProdutoEditar" class="form-label">Foto do Produto</label>
+                            <input name="image" type="file" id="fotoProdutoEditar" class="form-control" onchange="previewImagemEditar(this)">
+                            <div class="mt-2 text-center">
+                                <img id="previewImagemEditar" src="" alt="Preview da Imagem" style="max-width: 200px; max-height: 200px; display: none;">
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                        <button type="submit" class="btn btn-primary">Salvar alterações</button>
                     </div>
                 </form>
             </div>
@@ -295,7 +290,6 @@ $this->layout("_theme");
         </div>
     </div>
 
-
     <!-- Modal Excluir -->
     <div class="modal fade" id="modalExcluir" tabindex="-1" aria-labelledby="modalExcluirLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -354,10 +348,12 @@ $this->layout("_theme");
                 <form id="entrada-cadastro" name="entrada-cadastro" method="post">
                     <div class="modal-body">
                         <input name="produtoId" type="hidden" id="produtoId" value=""> <!-- Campo oculto para armazenar o id -->
-                        <div class="mb-3">
-                            <label for="fornecedor" class="form-label">Fornecedor</label>
-                            <input name="nome" type="text" class="form-control" id="fornecedor" placeholder="Digite o nome do fornecedor">
-                            <div class="list-group mt-0 position-absolute w-100" id="fornecedor-lista" style="display: none; z-index: 1000;"></div>
+                        <div class="mb-3 fornecedor-wrapper">
+                            <label for="entradaFornecedor" class="form-label">Fornecedor</label>
+                            <input name="fornecedor" type="text" class="form-control" id="entradaFornecedor" placeholder="Digite o nome do fornecedor" autocomplete="off">
+                            <input type="hidden" id="idFornecedor" name="idFornecedor">
+                            <div class="sugestoes-fornecedores" style="display: none; position: absolute; width: 100%; max-height: 200px; overflow-y: auto; background: white; border: 1px solid #ddd; border-radius: 4px; z-index: 1000;">
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label for="quantidade" class="form-label">Quantidade</label>
@@ -365,14 +361,7 @@ $this->layout("_theme");
                         </div>
                         <div class="mb-3">
                             <label for="precoEntrada" class="form-label">Preço</label>
-                            <input
-                                min="0"
-                                name="preco"
-                                type="text"
-                                class="form-control"
-                                id="precoEntrada"
-                                value="R$ 0,00"
-                                oninput="formatarPreco(this)">
+                            <input name="preco" type="text" class="form-control" id="precoEntrada" value="0,00" data-tipo="preco">
                             <small id="precoHelp" class="form-text text-muted">Digite o valor do produto com separação de milhar (ex: R$ 1.000,00).</small>
                         </div>
                     </div>
@@ -416,14 +405,7 @@ $this->layout("_theme");
                         <!-- Campo Preço -->
                         <div class="mb-3">
                             <label for="precoSaida" class="form-label">Preço</label>
-                            <input
-                                min="0"
-                                name="preco"
-                                type="text"
-                                class="form-control"
-                                id="precoSaida"
-                                value="R$ 0,00"
-                                oninput="formatarPreco(this)">
+                            <input name="preco" type="text" class="form-control" id="precoSaida" value="0,00" data-tipo="preco">
                             <small id="precoHelp" class="form-text text-muted">Digite o valor do produto com separação de milhar (ex: R$ 1.000,00).</small>
                         </div>
                     </div>
@@ -446,36 +428,84 @@ $this->layout("_theme");
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="d-flex justify-content-center ">
-                        <div class="d-flex align-items-center">
-                            <label for="filtroDataEntrada">Filtrar pelo dia da entrada:  </label>
-                            <input type="date" id="filtroDataEntrada" class="inputsBusca" onchange="filtrarEntradasPorData()" />
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label for="buscarEntrada" class="form-label">Buscar</label>
+                            <input type="text" class="form-control" id="buscarEntrada" placeholder="Digite para buscar..." oninput="buscarEntrada()">
                         </div>
-                        <div class="d-flex align-items-center">
-                            <label for="buscarEntrada" class="px-2">Procurar entrada: </label>
-                            <input type="text" name="buscarEntrada" class="inputsBusca" id="buscarEntrada" placeholder="Ex: produto...">
+                        <div class="col-md-4">
+                            <label for="dataFiltroEntrada" class="form-label">Filtrar por Data</label>
+                            <input type="date" class="form-control" id="dataFiltroEntrada" onchange="filtrarEntradasPorData()">
                         </div>
                     </div>
 
-                    <table class="table table-striped" id="tabelaEntradas">
-                        <thead>
-                            <tr>
-                                <th>Fornecedor</th>
-                                <th>Produto</th>
-                                <th>Quantidade</th>
-                                <th>Preço</th>
-                                <th>Data</th>
-                                <th colspan="2">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                    <!-- Navegação de Paginação para Saídas -->
-                    <nav aria-label="Page navigation example">
-                        <ul class="pagination justify-content-center" id="paginacaoEntradas">
-                            <!-- Botões de Paginação serão gerados aqui -->
-                        </ul>
-                    </nav>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Fornecedor</th>
+                                    <th>Produto</th>
+                                    <th>Quantidade</th>
+                                    <th>Preço</th>
+                                    <th>Data</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="corpoTabelaEntradas">
+                            </tbody>
+                        </table>
+                    </div>
+                    <div>
+                        <nav>
+                            <ul class="pagination justify-content-center" id="paginacaoEntradas"></ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Saídas -->
+    <div class="modal fade" id="saidasModal" tabindex="-1" aria-labelledby="saidasModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="saidasModalLabel">Saídas</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label for="buscarSaida" class="form-label">Buscar</label>
+                            <input type="text" class="form-control" id="buscarSaida" placeholder="Digite para buscar..." oninput="buscarSaida()">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="dataFiltroSaida" class="form-label">Filtrar por Data</label>
+                            <input type="date" class="form-control" id="dataFiltroSaida" onchange="filtrarSaidasPorData()">
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Produto</th>
+                                    <th>Quantidade</th>
+                                    <th>Preço</th>
+                                    <th>Data</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="corpoTabelaSaidas">
+                            </tbody>
+                        </table>
+                    </div>
+                    <div>
+                        <nav>
+                            <ul class="pagination justify-content-center" id="paginacaoSaidas"></ul>
+                        </nav>
+                    </div>
                 </div>
             </div>
         </div>
@@ -492,6 +522,7 @@ $this->layout("_theme");
                 <div class="modal-body">
                     <form id="entrada-editar" method="post">
                         <input name="idEntradaEditar" id="idEntradaEditar" type="hidden">
+                        
                         <!-- Nome do Produto -->
                         <div class="mb-3">
                             <label for="entradaProduto" class="form-label">Produto</label>
@@ -507,14 +538,16 @@ $this->layout("_theme");
                         <!-- Preço -->
                         <div class="mb-3">
                             <label for="entradaPreco" class="form-label">Preço</label>
-                            <input name="preco" type="number" class="form-control" id="entradaPreco" min="0" step="0.001">
+                            <input name="preco" type="text" class="form-control" id="entradaPreco" value="0,00" data-tipo="preco">
+                            <small class="form-text text-muted">Digite o valor do produto com separação de milhar (ex: R$ 1.000,00).</small>
                         </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                        </div>
+                    </form>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                    <button type="submit" class="btn btn-primary">Salvar alterações</button>
-                </div>
-                </form>
             </div>
         </div>
     </div>
@@ -539,7 +572,23 @@ $this->layout("_theme");
                         </div>
                     </div>
 
-                    <table class="table table-striped" id="tabelaSaidas">
+                    <div class="mb-3">
+                        <div class="row">
+                            <div class="col">
+                                <label for="dataInicialSaida" class="form-label">Data Inicial</label>
+                                <input type="date" class="form-control" id="dataInicialSaida">
+                            </div>
+                            <div class="col">
+                                <label for="dataFinalSaida" class="form-label">Data Final</label>
+                                <input type="date" class="form-control" id="dataFinalSaida">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="buscarSaida" class="form-label">Buscar</label>
+                        <input type="text" class="form-control" id="buscarSaida" placeholder="Buscar por produto ou cliente">
+                    </div>
+                    <table class="table">
                         <thead>
                             <tr>
                                 <th>Cliente</th>
@@ -547,17 +596,17 @@ $this->layout("_theme");
                                 <th>Quantidade</th>
                                 <th>Preço</th>
                                 <th>Data</th>
-                                <th colspan="2">Ações</th>
+                                <th>Ações</th>
                             </tr>
                         </thead>
-                        <tbody></tbody>
+                        <tbody id="corpoTabelaSaidas">
+                        </tbody>
                     </table>
-                    <!-- Navegação de Paginação para Saídas -->
-                    <nav aria-label="Page navigation example">
-                        <ul class="pagination justify-content-center" id="paginacaoSaidas">
-                            <!-- Botões de Paginação serão gerados aqui -->
-                        </ul>
-                    </nav>
+                    <div>
+                        <nav>
+                            <ul class="pagination justify-content-center" id="paginacaoSaidas"></ul>
+                        </nav>
+                    </div>
                 </div>
             </div>
         </div>
@@ -589,7 +638,8 @@ $this->layout("_theme");
                         <!-- Preço -->
                         <div class="mb-3">
                             <label for="saidaPreco" class="form-label">Preço</label>
-                            <input name="preco" type="number" class="form-control" id="saidaPreco" min="0" step="0.001">
+                            <input name="preco" type="text" class="form-control" id="saidaPreco" value="0,00" data-tipo="preco" required>
+                            <small id="precoHelp" class="form-text text-muted">Digite o valor do produto com separação de milhar (ex: R$ 1.000,00).</small>
                         </div>
                 </div>
                 <div class="modal-footer">
@@ -631,23 +681,21 @@ $this->layout("_theme");
                     <h5 class="modal-title" id="modalExcluirSaidaLabel">Excluir Saída</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
-                <form id="saida-excluir" method="post">
-                    <div class="modal-body">
-                        <p>Tem certeza de que deseja excluir esta saída?</p>
-                        <input type="hidden" id="idSaidaExcluir" name="idSaidaExcluir"> <!-- Campo oculto para armazenar o id -->
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-danger">Excluir</button>
-                    </div>
-                </form>
+                <div class="modal-body">
+                    <p>Tem certeza que deseja excluir esta saída?</p>
+                    <input type="hidden" id="idSaidaExcluir">
+                    <div id="saidaExcluir" data-produto-id="" data-quantidade=""></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmarExclusaoSaida()">Excluir</button>
+                </div>
             </div>
         </div>
     </div>
 
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
     <script src="<?= url('assets/app/js/app.js') ?>"></script>
     <script src="<?= url('assets/app/js/formsCreate.js') ?>" async></script>
     <script src="<?= url('assets/app/js/formsDelete.js') ?>" async></script>
-    <script src="<?= url('assets/app/js/formsUpdate.js') ?>" async></script>
-    <script src="<?= url('assets/app/js/funcoesAuxiliares.js') ?>" async></script>
 </body>

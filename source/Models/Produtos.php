@@ -231,8 +231,8 @@ class Produtos
 
     public function insert() : bool
     {
-        $query = "INSERT INTO produtos (idCategoria, nome, descricao, preco, imagem, unidade_medida, codigo_produto) 
-                    VALUES (:idCategoria, :nome, :descricao, :preco, :imagem, :unidade_medida, :codigo_produto)";
+        $query = "INSERT INTO produtos (idCategoria, nome, descricao, preco, imagem, unidade_medida, codigo_produto, quantidade) 
+                    VALUES (:idCategoria, :nome, :descricao, :preco, :imagem, :unidade_medida, :codigo_produto, 0)";
         $stmt = Connect::getInstance()->prepare($query);
         $stmt->bindParam(":idCategoria", $this->idCategoria);
         $stmt->bindParam(":nome", $this->nome);
