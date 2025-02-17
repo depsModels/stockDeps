@@ -78,8 +78,8 @@ function atualizarProdutos(data) {
   produtos = data || [];
   document.getElementById('total-produtos').textContent = produtos.length || 0;
   document.getElementById('produtos-estoque').textContent = produtos.filter(p => p.quantidade > 0).length;
-  document.getElementById('estoque-baixo').textContent = produtos.filter(p => p.quantidade > 0 && p.quantidade < 5).length;
-  document.getElementById('produtos-sem-estoque').textContent = produtos.filter(p => p.quantidade === 0).length;
+  document.getElementById('estoque-baixo').textContent = produtos.filter(p => p.quantidade >= 0 && p.quantidade <= 1).length;
+  document.getElementById('produtos-sem-estoque').textContent = produtos.filter(p => p.quantidade == 0).length;
 }
 
 function atualizarEntradas(data) {
@@ -238,6 +238,30 @@ function calcularLucroLiquido(entradas, saidas) {
   return lucroBruto - totalEntradas; // Receita - Custo
 }
 
+async function calcularValorEstoque() {
+  try {
+    const produtosResponse = await fetch(`${BASE_URL}/getProdutos`);
+    const entradasResponse = await fetch(`${BASE_URL}/getEntradas`);
+    const produtos = await produtosResponse.json();
+    const entradas = await entradasResponse.json();
+
+    let valorTotal = 0;
+
+    produtos.forEach(produto => {
+      const entradasProduto = entradas.filter(e => e.idProdutos === produto.id);
+
+      if (entradasProduto.length > 0) {
+        const precoMedio = entradasProduto.reduce((total, entrada) => total + (entrada.preco * entrada.quantidade), 0) /
+          entradasProduto.reduce((total, entrada) => total + entrada.quantidade, 0);
+        valorTotal += produto.quantidade * precoMedio;
+      }
+    });
+
+    document.getElementById('valor-estoque').textContent = `R$ ${valorTotal.toFixed(2)}`;
+  } catch (error) {
+    console.error("Erro ao calcular o valor total do estoque:", error);
+  }
+}
 
 function calcularLucroPorPeriodo(periodo) {
   const now = new Date(); // Data atual
@@ -301,5 +325,40 @@ document.getElementById('periodo').addEventListener('change', (event) => {
 window.onload = async () => {
   await loadDashboardData();
   calcularLucroPorPeriodo('total'); // Exibe lucro total ao carregar a página
+  carregarProdutosBaixoEstoque();
+  calcularValorEstoque()
 };
 
+async function carregarProdutosBaixoEstoque() {
+  try {
+    const response = await fetch(`${BASE_URL}/getProdutos`);
+    const produtos = await response.json();
+
+    const produtosBaixoEstoque = produtos.filter(p =>
+      (p.unidade_medida === 'KG' && p.quantidade <= 1) ||
+      (p.unidade_medida === 'UN' && p.quantidade <= 5)
+    );
+
+    const lista = document.getElementById("lista-estoque-baixo");
+    lista.innerHTML = ""; // Limpa a lista antes de adicionar novos itens
+
+    if (produtosBaixoEstoque.length === 0) {
+      lista.innerHTML = '<li class="list-group-item text-center text-success">Todos os produtos estão em estoque!</li>';
+      return;
+    }
+
+    produtosBaixoEstoque.forEach(produto => {
+      const item = document.createElement("li");
+      item.className = `list-group-item d-flex justify-content-between align-items-center ${produto.quantidade === 0 ? 'list-group-item-danger' : 'list-group-item-warning'} fw-bold`;
+      item.innerHTML = `
+              <span>${produto.nome} (Qtd: ${produto.quantidade} ${produto.unidade_medida})</span>
+              <span class="badge bg-${produto.quantidade === 0 ? 'danger' : 'warning'} rounded-pill p-2">
+                  ${produto.quantidade === 0 ? 'Sem estoque' : 'Estoque baixo'}
+              </span>
+          `;
+      lista.appendChild(item);
+    });
+  } catch (error) {
+    console.error("Erro ao carregar produtos de estoque baixo:", error);
+  }
+}

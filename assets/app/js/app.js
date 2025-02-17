@@ -2,6 +2,13 @@ const BASE_URL = '/app';
 const itensPorPagina = 8;
 const maxBotoesPaginacao = 5; // Limite de botões de página exibidos
 
+// Medição de performance
+for(let i = 0; i < 10; i++) {
+    console.time('operacao');
+    // Operação não otimizada aqui
+    console.timeEnd('operacao');
+}
+
 let produtos = [];
 let clientes = [];
 let fornecedores = [];
@@ -103,6 +110,7 @@ function renderizarTabela() {
 function buscarProduto() {
   const inputBuscarProduto = document.getElementById("buscarProduto");
   inputBuscarProduto.addEventListener("input", function () {
+    console.time('busca-produto');
     const termoBusca = inputBuscarProduto.value.toLowerCase();
 
     produtosFiltrados = produtosOriginais.filter(
@@ -115,6 +123,7 @@ function buscarProduto() {
     produtosOrdenados = [...produtosFiltrados];
     paginaAtual = 1; // Reinicia na primeira página
     mostrarPagina(paginaAtual); // Atualiza a tabela
+    console.timeEnd('busca-produto');
   });
 }
 

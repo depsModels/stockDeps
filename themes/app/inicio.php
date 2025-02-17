@@ -128,7 +128,16 @@ $this->layout("_theme");
                             </div>
                         </div>
                     </div>
-
+                    <div class="row mt-auto mb-4 mx-1">
+    <div class="col">
+        <div class="card h-100 p-2">
+            <div class="card-body">
+                <h5 class="card-title">Valor Total do Estoque</h5>
+                <h3 id="valor-estoque">R$ 0,00</h3>
+            </div>
+        </div>
+    </div>
+</div>
                 </div>
             </div>
             <div class="col-md-3">
@@ -142,19 +151,30 @@ $this->layout("_theme");
                 </div>
             </div>
             <div class="col-md-4">
-    <div class="card h-100 produtos-mais-vendidos-card">
-        <div class="card-body">
-            <h5 class="card-title text-center">Produtos Mais Vendidos</h5>
-            <div class="produtos-mais-vendidos-container">
-                <ul class="list-group list-group-flush" id="produtos-mais-vendidos">
-                    <!-- Os itens serão inseridos dinamicamente pelo JavaScript -->
-                </ul>
+                <div class="card h-100 produtos-mais-vendidos-card">
+                    <div class="card-body">
+                        <h5 class="card-title text-center">Produtos Mais Vendidos</h5>
+                        <div class="produtos-mais-vendidos-container">
+                            <ul class="list-group list-group-flush" id="produtos-mais-vendidos">
+                                <!-- Os itens serão inseridos dinamicamente pelo JavaScript -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
             </div>
+
+
         </div>
-    </div>
-</div>
-
-
+        <div class="container mt-4 mb-5">
+            <h3 class="text-center text-danger fw-bold">Produtos com Estoque Baixo</h3>
+            <div class="card border-danger">
+                <div class="card-body " style="max-height: 500px; overflow-y: auto;">
+                    <ul class="list-group" id="lista-estoque-baixo">
+                        <!-- Itens inseridos dinamicamente -->
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
 
