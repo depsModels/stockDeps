@@ -1222,13 +1222,13 @@ function openModal(tipo, produto) {
 
   if (tipo === "Editar") {
     document.getElementById("idProdutoUpdate").value = produto.id;
-    document.getElementById("codigoProdutoEditar").value =
-      produto.codigo_produto;
+    document.getElementById("codigoProdutoEditar").value = produto.codigo_produto;
     document.getElementById("nomeProduto").value = produto.nome;
     document.getElementById("descricaoProduto").value = produto.descricao;
     document.getElementById("fotoProduto").value = ""; // Limpa o campo (opcional)
     document.getElementById("previewImagem").src = produto.imagem; // Define o src da imagem
     document.getElementById("previewImagem").style.display = "block"; // Mostra a imagem
+    
     // Configurar unidade de medida
     const unidadeSelect = document.getElementById("unidadeProdutoEditar");
     const unidadeMedida = produto.unidade_medida;
@@ -1239,7 +1239,7 @@ function openModal(tipo, produto) {
     );
 
     // Adicionar a unidade ao select, se não existir
-    if (!optionExiste) {
+    if (!optionExiste && unidadeMedida) {
       const novaOption = document.createElement("option");
       novaOption.value = unidadeMedida;
       novaOption.textContent = unidadeMedida;
@@ -1247,7 +1247,9 @@ function openModal(tipo, produto) {
     }
 
     // Selecionar a unidade do produto
-    unidadeSelect.value = unidadeMedida;
+    if (unidadeMedida) {
+      unidadeSelect.value = unidadeMedida;
+    }
 
     const precoProduto = document.getElementById("precoProduto");
 
@@ -1255,15 +1257,12 @@ function openModal(tipo, produto) {
     let preco = produto.preco ? parseFloat(produto.preco) : 0;
 
     // Define o valor formatado no campo de entrada
-    precoProduto.value = preco.toLocaleString("pt-BR", {
+    precoProduto.value = `R$ ${preco.toLocaleString("pt-BR", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
-    });
+    })}`;
 
     // Configurar categorias no select
-    const categoria = categorias.find(
-      (categoria) => categoria.id === produto.idCategoria
-    );
     const categoriaSelect = document.getElementById("categoriaProdutoEditar");
     categoriaSelect.innerHTML = ""; // Limpar opções anteriores
 
@@ -1274,25 +1273,35 @@ function openModal(tipo, produto) {
     categoriaSelect.appendChild(defaultOption);
 
     // Preencher as opções com as categorias disponíveis
-    categorias.forEach((categoria) => {
-      const option = document.createElement("option");
-      option.value = categoria.id;
-      option.textContent = categoria.nome;
-      categoriaSelect.appendChild(option);
-    });
+    if (Array.isArray(categorias)) {
+      categorias.forEach((categoria) => {
+        const option = document.createElement("option");
+        option.value = categoria.id;
+        option.textContent = categoria.nome;
+        categoriaSelect.appendChild(option);
+      });
 
-    // Selecionar a categoria correspondente ao produto
-    if (categoria) {
-      categoriaSelect.value = categoria.id;
+      // Selecionar a categoria do produto
+      if (produto.idCategoria) {
+        categoriaSelect.value = produto.idCategoria;
+      }
     }
-  }
-
-  if (tipo === "Excluir") {
+  } else if (tipo === "Excluir") {
     document.getElementById("idProdutoExcluir").value = produto;
   }
 
-  // Exibir o modal correspondente
-  new bootstrap.Modal(document.getElementById(modalId)).show();
+  // Fechar qualquer modal que possa estar aberto
+  const modaisAbertos = document.querySelectorAll('.modal.show');
+  modaisAbertos.forEach(modalAberto => {
+    const bsModal = bootstrap.Modal.getInstance(modalAberto);
+    if (bsModal) {
+      bsModal.hide();
+    }
+  });
+
+  // Exibir o novo modal
+  const modal = new bootstrap.Modal(document.getElementById(modalId));
+  modal.show();
 }
 
 function openModalEntrada(id) {
@@ -1301,14 +1310,6 @@ function openModalEntrada(id) {
   inputProdutoId.value = id;
   new bootstrap.Modal(document.getElementById("modalEntrada")).show();
 }
-
-document
-  .getElementById("saida-cadastro")
-  .addEventListener("submit", function (event) {
-    const inputPrecoSaida = document.getElementById("precoSaida");
-
-    inputPrecoSaida.value = preco;
-  });
 
 function openModalSaida(id, preco) {
   const inputProdutoId = document.getElementById("produtoId2");
@@ -1607,3 +1608,4 @@ function inicializarComponentes() {
   loadAllData();
   inicializarCamposPreco();
 }
+

@@ -30,10 +30,7 @@ form_pc.on("submit", function (e) {
                 fetchProdutos();
             }
         },
-        error: function (xhr, status, error) {
-            console.error("Erro no AJAX:", error);
-            exibirMensagemTemporariaErro("Erro ao processar a solicitação.");
-        }
+        error: handleAjaxError
     });
 });
 
@@ -67,10 +64,7 @@ form_cc.on("submit", function (e) {
                 fetchCategorias();
             }
         },
-        error: function (xhr, status, error) {
-            console.error("Erro no AJAX:", error);
-            exibirMensagemTemporariaErro("Erro ao processar a solicitação.");
-        }
+        error: handleAjaxError
     });
 });
 
@@ -78,6 +72,20 @@ form_cc.on("submit", function (e) {
 const form_ec = $("#entrada-cadastro");
 form_ec.on("submit", function (e) {
     e.preventDefault();
+
+    // Validar campos antes de enviar
+    const quantidade = $("#quantidadeEntrada").val();
+    const preco = $("#precoEntrada").val().replace(/[^\d,]/g, '').replace(',', '.');
+    
+    if (!quantidade || quantidade <= 0) {
+        exibirMensagemTemporariaErro("Por favor, insira uma quantidade válida.");
+        return;
+    }
+
+    if (!preco || parseFloat(preco) <= 0) {
+        exibirMensagemTemporariaErro("Por favor, insira um preço válido.");
+        return;
+    }
 
     const serializedData = form_ec.serialize();
 
@@ -102,12 +110,14 @@ form_ec.on("submit", function (e) {
                 // Recarrega entradas e produtos
                 fetchEntradas();
                 fetchProdutos();
+                // Fecha o modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalEntrada'));
+                if (modal) {
+                    modal.hide();
+                }
             }
         },
-        error: function (xhr, status, error) {
-            console.error("Erro no AJAX:", error);
-            exibirMensagemTemporariaErro("Erro ao processar a solicitação.");
-        }
+        error: handleAjaxError
     });
 });
 
@@ -115,6 +125,20 @@ form_ec.on("submit", function (e) {
 const form_sc = $("#saida-cadastro");
 form_sc.on("submit", function (e) {
     e.preventDefault();
+
+    // Validar campos antes de enviar
+    const quantidade = $("#quantidadeSaida").val();
+    const preco = $("#precoSaida").val().replace(/[^\d,]/g, '').replace(',', '.');
+    
+    if (!quantidade || quantidade <= 0) {
+        exibirMensagemTemporariaErro("Por favor, insira uma quantidade válida.");
+        return;
+    }
+
+    if (!preco || parseFloat(preco) <= 0) {
+        exibirMensagemTemporariaErro("Por favor, insira um preço válido.");
+        return;
+    }
 
     const serializedData = form_sc.serialize();
 
@@ -139,12 +163,14 @@ form_sc.on("submit", function (e) {
                 // Recarrega saídas e produtos
                 fetchSaidas();
                 fetchProdutos();
+                // Fecha o modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalSaida'));
+                if (modal) {
+                    modal.hide();
+                }
             }
         },
-        error: function (xhr, status, error) {
-            console.error("Erro no AJAX:", error);
-            exibirMensagemTemporariaErro("Erro ao processar a solicitação.");
-        }
+        error: handleAjaxError
     });
 });
 
@@ -178,10 +204,7 @@ form_cadastro_clientes.on("submit", function (e) {
                 fetchClientes();
             }
         },
-        error: function (xhr, status, error) {
-            console.error("Erro no AJAX:", error);
-            exibirMensagemTemporariaErro("Erro ao processar a solicitação.");
-        }
+        error: handleAjaxError
     });
 });
 
@@ -215,10 +238,7 @@ form_cadastro_fornecedores.on("submit", function (e) {
                 fetchFornecedores();
             }
         },
-        error: function (xhr, status, error) {
-            console.error("Erro no AJAX:", error);
-            exibirMensagemTemporariaErro("Erro ao processar a solicitação.");
-        }
+        error: handleAjaxError
     });
 });
 
@@ -310,5 +330,27 @@ function limparCamposSaida() {
     form.find("#cliente").val(''); 
     form.find("#clienteNaoCadastrado").prop('checked', false);
     form.find("#quantidadeSaida").val('');
+}
+
+// Função auxiliar para tratar erros AJAX
+function handleAjaxError(xhr, status, error) {
+    console.error("Erro no AJAX:", error);
+    
+    let errorMessage = "Erro ao processar a solicitação.";
+    
+    try {
+        // Tentar parse do JSON primeiro
+        const jsonResponse = JSON.parse(xhr.responseText);
+        if (jsonResponse.message) {
+            errorMessage = jsonResponse.message;
+        }
+    } catch (e) {
+        // Se não for JSON, pode ser HTML com mensagem de erro do PHP
+        if (xhr.responseText.includes("Fatal error") || xhr.responseText.includes("Parse error")) {
+            errorMessage = "Erro interno do servidor. Por favor, contate o suporte.";
+        }
+    }
+    
+    exibirMensagemTemporariaErro(errorMessage);
 }
 

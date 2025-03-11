@@ -292,15 +292,26 @@ function buscarCliente() {
 function abrirModalEditarCliente(id) {
     const cliente = clientes.find(c => c.id === id);
     if (!cliente) {
-        alert("Cliente não encontrado");
+        exibirMensagemTemporariaErro("Cliente não encontrado");
         return;
     }
 
+    // Fechar qualquer modal que possa estar aberto
+    const modaisAbertos = document.querySelectorAll('.modal.show');
+    modaisAbertos.forEach(modalAberto => {
+        const bsModal = bootstrap.Modal.getInstance(modalAberto);
+        if (bsModal) {
+            bsModal.hide();
+        }
+    });
+
+    // Preencher os campos do formulário
     document.getElementById("idClienteUpdate").value = id;
     document.getElementById("editarNomeCliente").value = cliente.nome;
     document.getElementById("editarCpfCliente").value = cliente.cpf;
-    document.getElementById("editarTelefoneCliente").value = cliente.celular;
+    document.getElementById("editarTelefoneCliente").value = cliente.celular || '';
 
+    // Abrir o modal de edição
     const modalEditar = new bootstrap.Modal(document.getElementById("modalEditarCliente"));
     modalEditar.show();
 }

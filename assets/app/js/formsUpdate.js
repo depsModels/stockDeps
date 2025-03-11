@@ -28,23 +28,28 @@ function handleEditFormSubmission(formSelector, url, callback) {
                 submitButton.disabled = false;
                 
                 if (response.type === 'success') {
-                    // Criar e mostrar mensagem de sucesso
-                    const alertDiv = document.createElement('div');
-                    alertDiv.className = 'alert alert-success mt-3';
-                    alertDiv.textContent = response.message;
-                    form.appendChild(alertDiv);
+                    // Exibir mensagem de sucesso usando a função global
+                    exibirMensagemTemporariaSucesso(response.message);
                     
                     // Fazer callback (por exemplo, atualizar a tabela)
                     if (callback && typeof callback === 'function') {
                         callback(response);
                     }
                     
-                    // Fechar o modal
+                    // Fechar o modal e remover backdrop
                     const modalElement = form.closest('.modal');
                     if (modalElement) {
                         const modal = bootstrap.Modal.getInstance(modalElement);
                         if (modal) {
                             modal.hide();
+                            // Remover backdrop manualmente após um pequeno delay
+                            setTimeout(() => {
+                                document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+                                    backdrop.remove();
+                                });
+                                document.body.classList.remove('modal-open');
+                                document.body.style.removeProperty('padding-right');
+                            }, 300);
                         }
                     }
                     
@@ -53,16 +58,8 @@ function handleEditFormSubmission(formSelector, url, callback) {
                         atualizarDadosGlobais(response);
                     }
                 } else {
-                    // Mostrar mensagem de erro
-                    const alertDiv = document.createElement('div');
-                    alertDiv.className = 'alert alert-danger mt-3';
-                    alertDiv.textContent = response.message;
-                    form.appendChild(alertDiv);
-                    
-                    // Remover mensagem após um tempo
-                    setTimeout(() => {
-                        alertDiv.remove();
-                    }, 5000);
+                    // Exibir mensagem de erro usando a função global
+                    exibirMensagemTemporariaErro(response.message || "Ocorreu um erro ao processar sua solicitação.");
                 }
             },
             error: function(xhr, status, error) {
@@ -72,16 +69,24 @@ function handleEditFormSubmission(formSelector, url, callback) {
                 submitButton.innerHTML = originalButtonText;
                 submitButton.disabled = false;
                 
-                // Mostrar mensagem de erro genérica
-                const alertDiv = document.createElement('div');
-                alertDiv.className = 'alert alert-danger mt-3';
-                alertDiv.textContent = 'Ocorreu um erro ao processar sua solicitação. Tente novamente.';
-                form.appendChild(alertDiv);
+                // Tentar extrair mensagem de erro do response
+                let errorMessage = "Ocorreu um erro ao processar sua solicitação. Tente novamente.";
                 
-                // Remover mensagem após um tempo
-                setTimeout(() => {
-                    alertDiv.remove();
-                }, 5000);
+                try {
+                    // Tentar parse do JSON primeiro
+                    const jsonResponse = JSON.parse(xhr.responseText);
+                    if (jsonResponse.message) {
+                        errorMessage = jsonResponse.message;
+                    }
+                } catch (e) {
+                    // Se não for JSON, pode ser HTML com mensagem de erro do PHP
+                    if (xhr.responseText.includes("Fatal error") || xhr.responseText.includes("Parse error")) {
+                        errorMessage = "Erro interno do servidor. Por favor, contate o suporte.";
+                    }
+                }
+                
+                // Exibir mensagem de erro usando a função global
+                exibirMensagemTemporariaErro(errorMessage);
             }
         });
     });

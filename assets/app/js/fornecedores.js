@@ -214,7 +214,9 @@ function editarFornecedor(id) {
         document.getElementById("editarFornecedorCep").value = fornecedor.cep || "";
         document.getElementById("editarUfFornecedor").value = fornecedor.uf || "";
 
-        abrirModal()
+        // Abrir o modal usando Bootstrap
+        const modal = new bootstrap.Modal(document.getElementById('modalEditarFornecedor'));
+        modal.show();
     } else {
         console.error("Fornecedor não encontrado.");
     }
